@@ -50,6 +50,22 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         oldNotesLayoutHeader.setOnClickListener(view -> handleShowOldNotes());
+        sheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(@NonNull View bottomSheet, int newState) {
+
+            }
+
+            @Override
+            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+                if (slideOffset > 0.1) {
+                    oldNotesLayoutHeader.setBackgroundResource(R.color.white);
+                }
+                else {
+                    oldNotesLayoutHeader.setBackgroundResource(R.color.grey);
+                }
+            }
+        });
     }
 
     @Override
@@ -114,10 +130,8 @@ public class MainActivity extends AppCompatActivity {
     public void handleShowOldNotes() {
         if (sheetBehavior.getState() != BottomSheetBehavior.STATE_EXPANDED) {
             sheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
-            oldNotesLayoutHeader.setBackgroundResource(R.color.white);
         } else {
             sheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-            oldNotesLayoutHeader.setBackgroundResource(R.color.grey);
         }
     }
 }
