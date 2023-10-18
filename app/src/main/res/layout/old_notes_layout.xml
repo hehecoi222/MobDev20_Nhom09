@@ -35,21 +35,265 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="103dp"
         android:background="@color/white">
 
         <TextView
             android:id="@+id/textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
             android:text="Old Notes"
             android:textSize="40dp"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.068"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/account"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:colorAccent="#FFFFFF"
+            android:contentDescription="account"
+            app:backgroundTint="#FFFFFF"
+            app:icon="@drawable/outline_account_circle_24"
+            app:iconAllignment="center"
+            app:iconGravity="top"
+            app:iconPaddingTop="10dp"
+            app:iconSize="30dp"
+            app:iconTint="#000000"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="592dp"
+        android:paddingHorizontal="30dp"
+        android:paddingVertical="30dp"
+        tools:layout_editor_absoluteY="659dp">
+
+        <TableRow>
+
+            <RelativeLayout
+                android:id="@+id/old_note_1"
+                android:layout_width="148dp"
+                android:layout_height="150dp">
+
+
+                <ImageButton
+                    android:id="@+id/button_frame_1"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:background="#FFFFFF"
+                    android:foreground="@drawable/button_note"
+                    android:paddingHorizontal="80dp" />
+
+                <ImageButton
+                    android:id="@+id/more_1"
+                    android:layout_width="4dp"
+                    android:layout_height="20dp"
+                    android:layout_alignEnd="@+id/button_frame_1"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="18dp"
+                    android:foreground="@drawable/button_more" />
+
+                <TextView
+                    android:id="@+id/old_note_label_1"
+                    android:layout_width="92dp"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginStart="11dp"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="84dp"
+                    android:text="Header"
+                    android:textSize="20dp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/content_1"
+                    android:layout_width="127dp"
+                    android:layout_height="79dp"
+                    android:layout_alignEnd="@+id/button_frame_1"
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="17dp"
+                    android:text="Lorem Ipsum"
+                    android:textSize="10dp" />
+
+            </RelativeLayout>
+
+            <Space
+                android:layout_width="24dp"
+                android:layout_height="19dp"
+                android:scrollbarSize="5dp" />
+            <RelativeLayout
+                android:id="@+id/old_note_2"
+                android:layout_width="wrap_content"
+                android:layout_height="150dp">
+
+                <ImageButton
+                    android:id="@+id/note_frame_2"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:background="#FFFFFF"
+                    android:foreground="@drawable/button_note"
+                    android:paddingHorizontal="80dp" />
+
+                <ImageButton
+                    android:id="@+id/more_2"
+                    android:layout_width="4dp"
+                    android:layout_height="20dp"
+                    android:layout_alignEnd="@+id/note_frame_2"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="18dp"
+                    android:foreground="@drawable/button_more" />
+
+                <TextView
+                    android:id="@+id/old_note_label_2"
+                    android:layout_width="92dp"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginStart="11dp"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="84dp"
+                    android:text="Header"
+                    android:textSize="20dp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/content_2"
+                    android:layout_width="127dp"
+                    android:layout_height="79dp"
+                    android:layout_alignEnd="@+id/note_frame_2"
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="17dp"
+                    android:text="Lorem Ipsum"
+                    android:textSize="10dp" />
+
+            </RelativeLayout>
+        </TableRow>
+
+        <Space
+            android:layout_width="54dp"
+            android:layout_height="41dp"
+            android:scrollbarSize="10dp" />
+
+        <TableRow>
+            <RelativeLayout
+                android:id="@+id/old_note_3"
+                android:layout_width="148dp"
+                android:layout_height="150dp">
+
+
+                <ImageButton
+                    android:id="@+id/button_frame_3"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:background="#FFFFFF"
+                    android:foreground="@drawable/button_note"
+                    android:paddingHorizontal="80dp" />
+
+                <ImageButton
+                    android:id="@+id/more_3"
+                    android:layout_width="4dp"
+                    android:layout_height="20dp"
+                    android:layout_alignEnd="@+id/button_frame_3"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="18dp"
+                    android:foreground="@drawable/button_more" />
+
+                <TextView
+                    android:id="@+id/old_note_label_3"
+                    android:layout_width="92dp"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginStart="11dp"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="84dp"
+                    android:text="Header"
+                    android:textSize="20dp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/content_3"
+                    android:layout_width="127dp"
+                    android:layout_height="79dp"
+                    android:layout_alignEnd="@+id/button_frame_3"
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="17dp"
+                    android:text="Lorem Ipsum"
+                    android:textSize="10dp" />
+
+            </RelativeLayout>
+            <Space
+                android:layout_width="54dp"
+                android:layout_height="19dp"
+                android:scrollbarSize="10dp" />
+            <RelativeLayout
+                android:id="@+id/old_note_4"
+                android:layout_width="wrap_content"
+                android:layout_height="150dp">
+
+                <ImageButton
+                    android:id="@+id/note_frame_4"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:background="#FFFFFF"
+                    android:foreground="@drawable/button_note"
+                    android:paddingHorizontal="80dp" />
+
+                <ImageButton
+                    android:id="@+id/more_4"
+                    android:layout_width="4dp"
+                    android:layout_height="20dp"
+                    android:layout_alignEnd="@+id/note_frame_4"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="18dp"
+                    android:foreground="@drawable/button_more" />
+
+                <TextView
+                    android:id="@+id/old_note_label_4"
+                    android:layout_width="92dp"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:layout_marginStart="11dp"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="84dp"
+                    android:text="Header"
+                    android:textSize="20dp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/content_4"
+                    android:layout_width="127dp"
+                    android:layout_height="79dp"
+                    android:layout_alignEnd="@+id/note_frame_4"
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="17dp"
+                    android:text="Lorem Ipsum"
+                    android:textSize="10dp" />
+
+            </RelativeLayout>
+        </TableRow>
+
+    </TableLayout>
 
 
 </LinearLayout>
