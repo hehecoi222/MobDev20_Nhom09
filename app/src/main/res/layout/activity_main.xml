@@ -19,6 +19,60 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <Button
+        android:id="@+id/pen_button"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="20dp"
+        android:colorAccent="#FFFFFF"
+        android:contentDescription="Edit Button"
+        app:backgroundTint="#FFFFFF"
+        app:icon="@drawable/outline_mode_edit_24"
+        app:iconAllignment="center"
+        app:iconGravity="top"
+        app:iconPaddingTop="10dp"
+        app:iconSize="30dp"
+        app:iconTint="#000000"
+        app:layout_constraintEnd_toStartOf="@+id/account_button"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/more_button_2"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="20dp"
+        android:colorAccent="#FFFFFF"
+        android:contentDescription="More Setting Button"
+        app:backgroundTint="#FFFFFF"
+        app:icon="@drawable/baseline_more_horiz_24"
+        app:iconAllignment="center"
+        app:iconGravity="top"
+        app:iconPaddingTop="10dp"
+        app:iconSize="30dp"
+        app:iconTint="#000000"
+        app:layout_constraintEnd_toStartOf="@+id/pen_button"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/account_button"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="20dp"
+        android:colorAccent="#FFFFFF"
+        android:contentDescription="Account Button"
+        app:backgroundTint="#FFFFFF"
+        app:icon="@drawable/outline_account_circle_24"
+        app:iconAllignment="center"
+        app:iconGravity="top"
+        app:iconPaddingTop="10dp"
+        app:iconSize="30dp"
+        app:iconTint="#000000"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <EditText
         android:id="@+id/edt_title"
         android:layout_width="0dp"
@@ -58,8 +112,12 @@
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        tools:layout_editor_absoluteX="16dp"
+        tools:layout_editor_absoluteY="46dp">
+
         <include layout="@layout/old_notes_layout" />
+
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
