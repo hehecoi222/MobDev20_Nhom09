@@ -64,6 +64,9 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.hilt.android)
     implementation(platform("com.google.firebase:firebase-bom:32.6.0"))
+    implementation("com.google.firebase:firebase-storage-ktx:19.2.2")
+    implementation("com.google.firebase:firebase-core:19.0.1")
+    implementation(platform("com.google.firebase:firebase-auth:9.4.0"))
 
     kapt(libs.hilt.android.compiler)
     kapt(libs.kotlinx.metadata.jvm)
