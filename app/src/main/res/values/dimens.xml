@@ -7,5 +7,5 @@
     <dimen name="spacing">5dp</dimen>
     <dimen name="title_font_size">28sp</dimen>
     <dimen name="body_font_size">20sp</dimen>
-    <dimen name="padding_note_bottom">50dp</dimen>
+    <dimen name="padding_note_bottom">76dp</dimen>
 </resources>
