@@ -65,6 +65,9 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(platform("com.google.firebase:firebase-bom:32.6.0"))
     implementation("androidx.activity:activity-ktx:1.8.1")
+    // https://mvnrepository.com/artifact/net.lingala.zip4j/zip4j
+    implementation("net.lingala.zip4j:zip4j:2.11.5")
+
 
     kapt(libs.hilt.android.compiler)
     kapt(libs.kotlinx.metadata.jvm)

@@ -1,6 +1,5 @@
 package com.mobdev20.nhom09.quicknote.datasources
 
-import android.R.attr.data
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -13,6 +12,10 @@ import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContract
 import dagger.hilt.android.qualifiers.ApplicationContext
+import net.lingala.zip4j.ZipFile
+import net.lingala.zip4j.model.ZipParameters
+import net.lingala.zip4j.model.enums.CompressionLevel
+import net.lingala.zip4j.model.enums.CompressionMethod
 import java.io.File
 import javax.inject.Inject
 
@@ -21,8 +24,7 @@ interface StorageDatasource {
 
     fun getIntentForAttachment() : Intent?
     fun addIntentToList(context: Context, list: MutableList<Intent>, intent: Intent) : List<Intent>
-    fun handleActivityResult(requestCode: Int, resultCode: Int, data : Intent?) : String?
-    fun compressAndSaveFile(fileUri : Uri) : String
+    fun compressAndSaveFile(file : File) : String
     fun getTempFile(context: Context) : File
     fun getImageFromResult(
         context: Context?, resultCode: Int,
@@ -92,12 +94,47 @@ class StorageDatasourceImpl @Inject constructor(@ApplicationContext private val 
             return imageFile
         }
 
-        override fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?): String? {
-        TODO("Not yet implemented")
-        }
+//      Nhan file -> nen file -> ghi vao internal -> tra path cho repository (String)
+//      dst : String = dia chi luu file
+//      Call this func : compressAsZip(myFile ,MainActivity.this.getFilesDir().getAbsolutePath() + "/compress.zip");
+        override fun compressAndSaveFile(file : File): String {
 
-        override fun compressAndSaveFile(fileUri: Uri): String {
-        TODO("Not yet implemented")
+//
+            var fileName: String = file.name
+            val lastDotIndex = fileName.lastIndexOf('.')
+
+            // Check if there is a dot in the filename
+
+            // Check if there is a dot in the filename
+            if (lastDotIndex != -1 && lastDotIndex < fileName.length - 1) {
+                // Get the substring after the last dot
+                fileName = fileName.substring(0, lastDotIndex)
+            } else {
+                // No dot found or dot is at the end of the filename
+            }
+            val dst : String = context.filesDir.absolutePath + "/" + fileName + ".zip"
+
+            val dstFile = File(dst)
+            //make dirs if necessary
+            dstFile.getParentFile().mkdirs();
+            try {
+
+                val parameters = ZipParameters()
+
+                parameters.isIncludeRootFolder = false
+
+                parameters.compressionMethod = CompressionMethod.DEFLATE
+
+                parameters.compressionLevel = CompressionLevel.ULTRA
+
+                val zipFile = ZipFile(dstFile.absoluteFile)
+                zipFile.isRunInThread = true
+                zipFile.addFile(file, parameters);
+
+                return dst;
+            } catch (exception : Exception) {
+                return "Error";
+            }
         }
 
     override fun getImageFromResult(

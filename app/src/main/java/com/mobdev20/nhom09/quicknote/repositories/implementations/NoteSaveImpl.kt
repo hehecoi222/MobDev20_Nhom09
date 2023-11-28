@@ -1,9 +1,12 @@
 package com.mobdev20.nhom09.quicknote.repositories.implementations
 
 import com.mobdev20.nhom09.quicknote.datasources.NoteDataStore
+import com.mobdev20.nhom09.quicknote.datasources.StorageDatasource
+import com.mobdev20.nhom09.quicknote.datasources.StorageDatasourceImpl
 import com.mobdev20.nhom09.quicknote.helpers.Encoder
 import com.mobdev20.nhom09.quicknote.repositories.NoteSave
 import com.mobdev20.nhom09.quicknote.state.NoteState
+import com.mobdev20.nhom09.quicknote.viewmodels.EditorViewModel
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -19,6 +22,12 @@ import javax.inject.Inject
 
 class NoteSaveImpl @Inject constructor(): NoteSave {
     @Inject lateinit var noteDataStore: NoteDataStore
+
+    @Inject
+    lateinit var editorViewModel : EditorViewModel
+
+    @Inject
+    lateinit var storageDataSource : StorageDatasource
     override suspend fun update(noteState: NoteState) {
         val model = """
             {
@@ -30,8 +39,9 @@ class NoteSaveImpl @Inject constructor(): NoteSave {
         noteDataStore.writeTo(noteState.id, model)
     }
 
+//    tra ve cho viewModel
     override fun createFile(file: File): String {
-        TODO("Not yet implemented")
+        return storageDataSource.compressAndSaveFile(file)
     }
 
     override fun loadNote(id: String): Flow<NoteState?> {
