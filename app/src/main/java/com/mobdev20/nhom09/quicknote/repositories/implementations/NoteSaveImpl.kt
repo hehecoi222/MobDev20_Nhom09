@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import java.io.File
 import javax.inject.Inject
 
 class NoteSaveImpl @Inject constructor(): NoteSave {
@@ -27,6 +28,10 @@ class NoteSaveImpl @Inject constructor(): NoteSave {
             }
         """.trimIndent()
         noteDataStore.writeTo(noteState.id, model)
+    }
+
+    override fun createFile(file: File): String {
+        TODO("Not yet implemented")
     }
 
     override fun loadNote(id: String): Flow<NoteState?> {

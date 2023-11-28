@@ -1,9 +1,13 @@
 package com.mobdev20.nhom09.quicknote.viewmodels
 
+import android.graphics.Bitmap
 import android.util.Log
+import androidx.activity.result.ActivityResultCallback
+import androidx.activity.result.contract.ActivityResultContract
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mobdev20.nhom09.quicknote.datasources.ChooseAttachment
 import com.mobdev20.nhom09.quicknote.helpers.Uuid
 import com.mobdev20.nhom09.quicknote.repositories.NoteSave
 import com.mobdev20.nhom09.quicknote.state.NoteState
@@ -17,7 +21,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
 //@HiltViewModel
-class EditorViewModel @Inject constructor() : ViewModel() {
+class EditorViewModel @Inject constructor(
+//    private val activityResultContractor: ChooseAttachment
+) : ViewModel(), ActivityResultCallback<Bitmap?> {
     private val _noteState = MutableStateFlow(NoteState())
     val noteState: StateFlow<NoteState> = _noteState.asStateFlow()
 
@@ -90,5 +96,9 @@ class EditorViewModel @Inject constructor() : ViewModel() {
             load.value = true
             NoteState()
         }
+    }
+
+    override fun onActivityResult(result: Bitmap?) {
+        TODO("Not yet implemented")
     }
 }

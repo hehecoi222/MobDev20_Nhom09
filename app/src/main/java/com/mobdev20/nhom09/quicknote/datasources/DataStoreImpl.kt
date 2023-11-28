@@ -24,6 +24,7 @@ interface NoteDataStore {
 }
 
 class NoteDataStoreImpl @Inject constructor(@ApplicationContext private val context: Context) :
+    // constructor
     NoteDataStore {
     private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "note_store")
     override suspend fun writeTo(key: String, value: String) {

@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.hilt.android)
     implementation(platform("com.google.firebase:firebase-bom:32.6.0"))
+    implementation("androidx.activity:activity-ktx:1.8.1")
 
     kapt(libs.hilt.android.compiler)
     kapt(libs.kotlinx.metadata.jvm)
