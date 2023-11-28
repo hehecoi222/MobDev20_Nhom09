@@ -243,11 +243,13 @@ fun BottomSheet(
 @Preview
 @Composable
 fun BottomSheetDrawerPreview() {
-//    BottomSheetDrawer()
+    BottomSheetDrawer(expanded = mutableStateOf(false), isKeyboardActive = mutableStateOf(false), kindOfBottomSheet = mutableStateOf(KindOfBottomSheet.FormatBar))
 }
 
 @Preview
 @Composable
 fun BottomSheetPreview() {
-//    BottomSheet()
+    BottomSheet(expanded = mutableStateOf(true), kindOfBottomSheet = mutableStateOf(KindOfBottomSheet.OldNotes), content = {
+        KindOfBottomSheet.GetContent(kindOfBottomSheet = KindOfBottomSheet.OldNotes)
+    })
 }
