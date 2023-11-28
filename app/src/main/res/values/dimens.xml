@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="top_app_bar_height">64dp</dimen>
+    <dimen name="bottom_sheet_inactive">48dp</dimen>
+    <dimen name="trailing_icon_size">24dp</dimen>
+    <dimen name="padding_around">16dp</dimen>
+    <dimen name="spacing">5dp</dimen>
+    <dimen name="title_font_size">28sp</dimen>
+    <dimen name="body_font_size">20sp</dimen>
+    <dimen name="padding_note_bottom">50dp</dimen>
+</resources>

@@ -4,15 +4,74 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/top_app_bar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/top_app_bar_height"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:composableName="com.mobdev20.nhom09.quicknote.views.TopAppBarKt.CustomTopAppBarPreview">
 
+    </androidx.compose.ui.platform.ComposeView>
+
+
+    <ScrollView
+        android:id="@+id/note_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="@dimen/top_app_bar_height"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/top_app_bar">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/padding_around"
+            android:orientation="vertical"
+            android:paddingTop="@dimen/padding_around"
+            android:paddingBottom="@dimen/padding_note_bottom"
+            android:verticalScrollbarPosition="defaultPosition">
+
+            <androidx.compose.ui.platform.ComposeView
+                android:id="@+id/note_title_compose"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+            </androidx.compose.ui.platform.ComposeView>
+
+            <EditText
+                android:id="@+id/note_body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/padding_around"
+                android:background="@null"
+                android:gravity="top"
+                android:hint="Note content"
+                android:textColorHint="?attr/colorOnSurfaceVariant"
+                android:imeOptions="actionDone"
+                android:importantForAutofill="no"
+                android:inputType="textMultiLine"
+                android:minHeight="250dp"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="@dimen/body_font_size">
+
+            </EditText>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/bottom_sheet_drawer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:composableName="com.mobdev20.nhom09.quicknote.views.BottomSheetDrawerKt.BottomSheetDrawerPreview">
+
+    </androidx.compose.ui.platform.ComposeView>
 </androidx.constraintlayout.widget.ConstraintLayout>

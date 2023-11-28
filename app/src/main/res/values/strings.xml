@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">QuickNote</string>
+    <string name="more_opt_label_backup">Backup</string>
+    <string name="more_opt_label_delete">Delete</string>
+    <string name="more_opt_label_share">Share</string>
+    <string name="more_opt_label_attach">Attachments</string>
+    <string name="more_opt_label_noti_add">Add Notification</string>
+    <string name="more_opt_label_noti_edit">Edit Notification</string>
 </resources>
