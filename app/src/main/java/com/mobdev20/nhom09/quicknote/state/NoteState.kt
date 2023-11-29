@@ -4,6 +4,7 @@ import java.time.Instant
 
 data class NoteState(
     val id: String = "",
+    val userId: String = "",
     val title: String = "",
     val content: String = "",
     val timeUpdate: Instant = Instant.now(),
@@ -14,6 +15,7 @@ data class NoteState(
 
 data class NoteHistory(
     val timestamp: Instant = Instant.now(),
+    val userId: String,
     val line: Int = 0,
     val type: HistoryType = HistoryType.ADD,
     val contentOld: String = "",

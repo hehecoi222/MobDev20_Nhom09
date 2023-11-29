@@ -5,17 +5,24 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.auth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import com.mobdev20.nhom09.quicknote.helpers.Uuid
 import com.mobdev20.nhom09.quicknote.repositories.NoteSave
+import com.mobdev20.nhom09.quicknote.repositories.UserSave
 import com.mobdev20.nhom09.quicknote.state.HistoryType
 import com.mobdev20.nhom09.quicknote.state.NoteHistory
 import com.mobdev20.nhom09.quicknote.state.NoteState
+import com.mobdev20.nhom09.quicknote.state.UserState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import kotlin.math.max
@@ -25,8 +32,15 @@ class EditorViewModel @Inject constructor() : ViewModel() {
     private val _noteState = MutableStateFlow(NoteState())
     val noteState: StateFlow<NoteState> = _noteState.asStateFlow()
 
+    private val _userState = MutableStateFlow(UserState())
+    fun updateUser(auth: FirebaseAuth) {
+        _userState.value = userSaveRepository.loadInfo(auth)
+    }
+
     @Inject
     lateinit var noteSaveRepository: NoteSave
+    @Inject
+    lateinit var userSaveRepository: UserSave
     private val stateSave = AtomicBoolean(false)
 
     val load = mutableStateOf(false)
@@ -39,7 +53,11 @@ class EditorViewModel @Inject constructor() : ViewModel() {
         if (!stateSave.get()) {
             stateSave.set(true)
             _noteState.update {
-                it.copy(id = Uuid.generateType1UUID(), title = it.title.ifEmpty { "Untitled Note" })
+                it.copy(
+                    id = Uuid.generateType1UUID(),
+                    title = it.title.ifEmpty { "Untitled Note" },
+                    userId = _userState.value.id
+                )
             }
             viewModelScope.launch {
                 noteSaveRepository.update(_noteState.value)
@@ -58,6 +76,11 @@ class EditorViewModel @Inject constructor() : ViewModel() {
             stateSave.set(true)
             viewModelScope.launch {
                 delay(2000)
+                _noteState.update {
+                    it.copy(
+                        timeUpdate = Instant.now()
+                    )
+                }
                 noteSaveRepository.update(_noteState.value)
                 stateSave.set(false)
             }
@@ -107,7 +130,8 @@ class EditorViewModel @Inject constructor() : ViewModel() {
                 val history = NoteHistory(
                     contentNew = newSplit[newI],
                     type = HistoryType.ADD,
-                    line = newI + 1
+                    line = newI + 1,
+                    userId = _userState.value.id
                 )
                 histories.add(history)
                 newI++
@@ -115,7 +139,8 @@ class EditorViewModel @Inject constructor() : ViewModel() {
                 val history = NoteHistory(
                     contentOld = oldSplit[oldI],
                     type = HistoryType.DELETE,
-                    line = oldI + 1
+                    line = oldI + 1,
+                    userId = _userState.value.id
                 )
                 histories.add(history)
                 oldI++
@@ -125,7 +150,8 @@ class EditorViewModel @Inject constructor() : ViewModel() {
                         val history = NoteHistory(
                             contentOld = oldSplit[oldI],
                             type = HistoryType.DELETE,
-                            line = oldI + 1
+                            line = oldI + 1,
+                            userId = _userState.value.id
                         )
                         histories.add(history)
                         newI++
@@ -134,7 +160,8 @@ class EditorViewModel @Inject constructor() : ViewModel() {
                         val history = NoteHistory(
                             contentNew = newSplit[newI],
                             type = HistoryType.ADD,
-                            line = newI + 1
+                            line = newI + 1,
+                            userId = _userState.value.id
                         )
                         histories.add(history)
                         oldI++
@@ -144,7 +171,8 @@ class EditorViewModel @Inject constructor() : ViewModel() {
                             line = newI + 1,
                             type = HistoryType.EDIT,
                             contentOld = oldSplit[oldI],
-                            contentNew = newSplit[newI]
+                            contentNew = newSplit[newI],
+                            userId = _userState.value.id
                         )
                         histories.add(history)
                         oldI++
@@ -164,7 +192,9 @@ class EditorViewModel @Inject constructor() : ViewModel() {
     }
 
     fun reverseHistory() {
-        if (_noteState.value.history.isEmpty()) {return}
+        if (_noteState.value.history.isEmpty()) {
+            return
+        }
         load.value = true
         val history = _noteState.value.history.removeLast()
         currentReverseHistory.value = history
