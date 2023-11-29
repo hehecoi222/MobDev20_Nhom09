@@ -1,0 +1,9 @@
+{
+  "noteID" : "a1",
+  "title" : "Test Title",
+  "content" : "Test Content",
+  "attachmentPaths" : [
+    "storage/Emulated/0/dataTest/Background.png",
+    "storage/Emulated/0/dataTest/Logo.png"
+  ]
+}

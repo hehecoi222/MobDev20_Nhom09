@@ -47,6 +47,7 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.4"
     }
+    //testOptions.unitTests.isReturnDefaultValues = true
 }
 
 dependencies {
@@ -65,6 +66,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.hilt.android)
     implementation(platform("com.google.firebase:firebase-bom:32.6.0"))
+    implementation(libs.androidx.core.ktx)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-storage-ktx:20.3.0")
@@ -76,6 +78,9 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     debugImplementation(libs.ui.tooling)
     testImplementation(libs.junit)
+    androidTestImplementation("androidx.test:rules:1.4.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.0")
+    implementation("org.mockito:mockito-inline:5.2.0")
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
 }

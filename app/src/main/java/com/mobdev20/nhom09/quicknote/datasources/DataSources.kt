@@ -1,6 +1,7 @@
 package com.mobdev20.nhom09.quicknote.datasources
 
 import android.net.Uri
+import android.os.Looper
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
@@ -8,25 +9,25 @@ import com.google.firebase.firestore.DocumentSnapshot
 import org.json.JSONObject
 import java.io.File
 import java.io.FileWriter
+import android.util.Log
+import android.os.Handler
+import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.storage.StorageException
 
 
 class DataSources {
-    private val collection = "Note"
+    private val collection = "Notes"
     private val db = FirebaseFirestore.getInstance()
     private val storage = Firebase.storage
 
-    fun upload(jsonPath: String){ //argument userID for collection
-        uploadData(jsonToData(getJsonObject(jsonPath)))
+    fun upload(jsonString: String){ //argument userID for collection
+        uploadData(jsonToData(jsonString))
     }
 
-    private fun getJsonObject(jsonFilePath: String) : JSONObject {
-        val jsonFile = File(jsonFilePath)
-        val jsonString = jsonFile.readText()
 
-        return JSONObject(jsonString)
-    }
-
-    private fun jsonToData(jsonObject: JSONObject) : Map<String, Any> {
+    private fun jsonToData(jsonString: String) : Map<String, Any> {
+        val jsonObject = JSONObject(jsonString)
         val dataItem = mutableMapOf<String, Any>()
 
         for (key in jsonObject.keys()) {
@@ -38,38 +39,26 @@ class DataSources {
 
     private fun uploadData(data: Map<String, Any>) {
         val docID = data["noteID"] as String
-        val cloudPaths : MutableList<String> = mutableListOf()
 
         db.collection(collection)
             .document(docID)
-            .set(data)
+            .set(data, SetOptions.merge())
             .addOnSuccessListener {
                 val paths = data["attachmentPaths"] as MutableList<*>
 
                 paths.forEach{
                     uploadImg(it as String,  cloudPath(it, docID))
                 }
+
+                Log.i("CompleteQwe", "Success upload")
             }
             .addOnFailureListener {
-                //do sth when fail
+                Log.e("UnCompleteQwe", it.toString())
             }
     }
 
     private fun cloudPath(localPath: String, docID: String) : String{
         return docID + "/" + File(localPath).name // userID + "/" + docID + "/" + file.name
-    }
-
-    private fun addCloudPath(cloudPath: MutableList<String>, docID: String) {
-        val data: Map<String, Any> = mutableMapOf("cloudPath" to cloudPath)
-        db.collection(collection)
-            .document(docID)
-            .update(data)
-            .addOnSuccessListener {
-                //do sth when success
-            }
-            .addOnFailureListener {
-                //do sth when failure
-            }
     }
 
     fun uploadImg(localPath: String, cloudPath: String) {
@@ -78,9 +67,9 @@ class DataSources {
         val uploadTask = storageRef.putFile(file)
 
         uploadTask.addOnSuccessListener {
-            // The file was successfully uploaded
+            Log.i("CompleteQwe", "Success upload")
         }.addOnFailureListener {
-            // The upload failed
+            Log.e("UnCompleteQwe", it.toString())
         }
     }
 
@@ -92,21 +81,23 @@ class DataSources {
         db.collection(collection)
             .document(docID)
             .get()
-            .addOnSuccessListener {
-                val jsonObject = docToJson(it)
-                val jsonString = jsonObject.toString()
-                val fileWriter = FileWriter("$docID.json")
-                fileWriter.write(jsonString)
-                fileWriter.close()
+            .addOnSuccessListener { documentSnapshot ->
+                if (documentSnapshot != null && documentSnapshot.exists()) {
+                    val jsonObject = docToJson(documentSnapshot)
+                    Log.i("DownloadSuccess", jsonObject.toString())
+                    val paths = jsonObject.get("attachmentPaths") as MutableList<*>
 
-                val paths = jsonObject.get("attachmentPaths") as MutableList<*>
+                    paths.forEach{
+                        downloadImg(cloudPath(it as String, docID), it)
+                    }
 
-                paths.forEach{
-                    downloadImg(cloudPath(it as String, docID), it)
+                    Log.i("DownloadSuccess", jsonObject.get("content").toString())
+                } else {
+                    Log.e("!DownloadSuccess", "No such document")
                 }
             }
             .addOnFailureListener {
-                //do sth when failure
+                Log.e("!DownloadSuccess", it.toString())
             }
     }
 
@@ -127,9 +118,23 @@ class DataSources {
 
         storageRef.getFile(localFile)
             .addOnSuccessListener {
-                
-            }.addOnFailureListener {
-                // The download failed
+                Log.d("DownloadSuccess", "Download Image success")
+                Log.d("DownloadSuccess", "localStorage: $localPath")
+            }.addOnFailureListener { exception ->
+                Log.e("!DownloadSuccess", exception.message.toString())
+                Log.e("!DownloadSuccess", "localStorage: $localPath")
+                Log.e("!DownloadSuccess", "cloudStorage: $cloudPath")
+                when (exception) {
+                    is StorageException -> {
+                        Log.e("!DownloadSuccess",
+                            "HTTP result code:" + exception.httpResultCode)
+                        exception.cause.let { cause ->
+                            Log.e("!DownloadSuccess", "Inner exception: ", cause)
+                        }
+                    }
+                    else -> {
+                    }
+                }
             }
     }
 }
