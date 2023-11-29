@@ -89,7 +89,10 @@ fun BottomSheetDrawer(
                         kindOfBottomSheet = kindOfBottomSheet.value,
                         oldNoteListState = noteList,
                         onClickNote = onClickNote,
-                        onClickDelete = onDeleteNote
+                        onClickDelete = onDeleteNote,
+                        onClickAttachment = {
+                            kindOfBottomSheet.value = KindOfBottomSheet.AttachmentTab
+                        }
                     )
                 }
                 FormatBar(kindOfBottomSheet = kindOfBottomSheet)
@@ -183,6 +186,11 @@ fun BottomSheet(
         KindOfBottomSheet.MoreOpts -> {
             expanded.value = true
             180.dp
+        }
+
+        KindOfBottomSheet.AttachmentTab -> {
+            expanded.value = true
+            360.dp
         }
 
         else -> {

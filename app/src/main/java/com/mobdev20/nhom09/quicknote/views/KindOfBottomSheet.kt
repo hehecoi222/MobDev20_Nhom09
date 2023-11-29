@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import com.mobdev20.nhom09.quicknote.state.NoteOverview
+import com.mobdev20.nhom09.quicknote.views.sheetsContent.Attachments
 import com.mobdev20.nhom09.quicknote.views.sheetsContent.MoreOptionSheet
 import com.mobdev20.nhom09.quicknote.views.sheetsContent.OldNotesSheet
 
@@ -24,7 +25,9 @@ enum class KindOfBottomSheet(val value: Int) {
             modifier: Modifier = Modifier,
             oldNoteListState: SnapshotStateList<NoteOverview> = mutableStateListOf(),
             onClickNote: (String) -> Unit,
-            onClickDelete: () -> Unit
+            onClickDelete: () -> Unit,
+            onClickAttachment: () -> Unit,
+            onClickNotification: () -> Unit = {}
         ) {
             when (kindOfBottomSheet) {
                 OldNotes -> OldNotesSheet(
@@ -33,7 +36,12 @@ enum class KindOfBottomSheet(val value: Int) {
                     onClickNote = onClickNote,
                 )
 
-                MoreOpts -> MoreOptionSheet(onClickDelete = onClickDelete)
+                MoreOpts -> MoreOptionSheet(
+                    onClickDelete = onClickDelete,
+                    onClickAttachments = onClickAttachment
+                )
+
+                AttachmentTab -> Attachments()
                 else -> {}
             }
         }

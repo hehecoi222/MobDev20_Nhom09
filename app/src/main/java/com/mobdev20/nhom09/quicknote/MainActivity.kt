@@ -165,7 +165,7 @@ class MainActivity : AppCompatActivity() {
                         clearState = {
                             editorViewModel.clearState()
                         },
-                        isClearAvailable = editorViewModel.noteState.value.id.isEmpty()
+                        isClearAvailable = editorViewModel.noteState.collectAsState().value.id.isNotEmpty()
                     ) {
                         binding.noteBody.requestFocus()
                     }

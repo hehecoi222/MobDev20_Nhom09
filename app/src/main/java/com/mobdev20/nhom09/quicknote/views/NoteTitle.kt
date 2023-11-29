@@ -99,8 +99,7 @@ fun NoteTitleTextField(
             )
             AnimatedVisibility(visible = isClearAvailable) {
                 IconButton(onClick = clearState, modifier = Modifier
-                    .size(24.dp)
-                    .padding(4.dp)) {
+                    .size(24.dp)) {
                     Icon(
                         painter = painterResource(id = R.drawable.baseline_remove_circle_outline_24),
                         contentDescription = null, // TODO: Add string description

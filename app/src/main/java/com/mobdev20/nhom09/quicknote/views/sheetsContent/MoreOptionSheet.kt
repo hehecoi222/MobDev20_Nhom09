@@ -27,7 +27,8 @@ import com.mobdev20.nhom09.quicknote.R
 
 @Composable
 fun MoreOptionSheet(modifier: Modifier = Modifier,
-                    onClickDelete: () -> Unit) {
+                    onClickDelete: () -> Unit,
+                    onClickAttachments: () -> Unit) {
     Row(modifier = modifier, horizontalArrangement = Arrangement.SpaceAround) {
         MoreOption(
             icon = R.drawable.outline_cloud_upload_24,
@@ -48,7 +49,8 @@ fun MoreOptionSheet(modifier: Modifier = Modifier,
         MoreOption(
             icon = R.drawable.outline_attach_file_24,
             value = R.string.more_opt_label_attach,
-            visible = true
+            visible = true,
+            onClick = onClickAttachments
         )
         MoreOption(
             icon = R.drawable.outline_notification_add_24,

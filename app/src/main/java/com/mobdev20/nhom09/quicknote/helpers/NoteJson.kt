@@ -75,5 +75,17 @@ class NoteJson {
                 ),
             )
         }
+
+        fun getFilenameFromAttachPath(path: String): String {
+            val filename = path.substring(path.lastIndexOf("/") + 1)
+            val fileSpilt = filename.split(".")
+            return fileSpilt[0] + fileSpilt[2]
+        }
+
+        fun parseFilename(filename: String): String {
+            val fileSpilt = filename.split(".")
+            val fileNamePath = fileSpilt.subList(0, fileSpilt.size - 1).joinToString("")
+            return fileNamePath + "." + fileSpilt.last()
+        }
     }
 }

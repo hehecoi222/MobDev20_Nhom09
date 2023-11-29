@@ -1,5 +1,7 @@
 package com.mobdev20.nhom09.quicknote.state
 
+import android.graphics.Bitmap
+import com.mobdev20.nhom09.quicknote.helpers.NoteJson
 import java.time.Instant
 
 data class NoteState(
@@ -10,6 +12,7 @@ data class NoteState(
     val timeUpdate: Instant = Instant.now(),
     val timeRestore: Instant = Instant.now(),
     val history: MutableList<NoteHistory> = mutableListOf(),
+    val attachments: MutableList<String> = mutableListOf()
 ) {
 }
 
@@ -21,6 +24,13 @@ data class NoteHistory(
     val contentOld: String = "",
     val contentNew: String = ""
 )
+
+data class Attachment(
+    val filepath: String = "",
+    val thumbnail: Bitmap = Bitmap.createBitmap(50, 50, Bitmap.Config.ARGB_8888)
+) {
+    val filename = NoteJson.getFilenameFromAttachPath(filepath)
+}
 
 enum class HistoryType(val value: Int) {
     ADD(0),
