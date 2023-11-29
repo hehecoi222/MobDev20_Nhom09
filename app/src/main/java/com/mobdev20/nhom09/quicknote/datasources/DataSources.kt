@@ -12,6 +12,8 @@ import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.StorageException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.mobdev20.nhom09.quicknote.helpers.NoteJson
+import com.mobdev20.nhom09.quicknote.state.NoteState
 
 
 class DataSources {
@@ -90,14 +92,14 @@ class DataSources {
             .addOnSuccessListener { documentSnapshot ->
                 if (documentSnapshot != null && documentSnapshot.exists()) {
                     val jsonObject = docToJson(documentSnapshot)
-                    Log.i("DownloadSuccess", jsonObject.toString())
                     val paths = jsonObject.get("attachmentPaths") as MutableList<*>
 
                     paths.forEach{
                         downloadImg(cloudPath(it as String, docID), it)
                     }
 
-                    Log.i("DownloadSuccess", jsonObject.get("content").toString())
+                    createNoteState(docToJsonString(documentSnapshot))
+                    Log.i("DownloadSuccess", docToJsonString(documentSnapshot))
                 } else {
                     Log.e("!DownloadSuccess", "No such document")
                 }
@@ -105,6 +107,10 @@ class DataSources {
             .addOnFailureListener {
                 Log.e("!DownloadSuccess", it.toString())
             }
+    }
+
+    private fun createNoteState(jsonString: String) : NoteState {
+        return NoteJson.convertJson(jsonString)
     }
 
     private fun docToJson(docSnapshot: DocumentSnapshot) : JSONObject {
@@ -116,6 +122,12 @@ class DataSources {
             }
         }
         return jsonObject
+    }
+
+    private fun docToJsonString(docSnapshot: DocumentSnapshot?) : String {
+        val data = docSnapshot!!.data
+        val mapper = jacksonObjectMapper()
+        return mapper.writeValueAsString(data)
     }
 
     private fun downloadImg(cloudPath: String, localPath: String) {
