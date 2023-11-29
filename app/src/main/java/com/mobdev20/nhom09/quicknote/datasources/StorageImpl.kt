@@ -30,6 +30,7 @@ interface StorageDatasource {
         context: Context?, resultCode: Int,
         imageReturnedIntent: Intent?
     ): Bitmap?
+    fun getFileFromInternal(path : String) : File?
 }
 
 class StorageDatasourceImpl @Inject constructor(@ApplicationContext private val context: Context) :
@@ -161,6 +162,30 @@ class StorageDatasourceImpl @Inject constructor(@ApplicationContext private val 
 //            bm = rotate(bm, rotation)
         }
         return bm
+    }
+//  call : File newFile = getFileFromInternal(filePath);
+//    filePath  = from compressandsavefile-> String
+    override fun getFileFromInternal(path: String): File? {
+        val zipFile = ZipFile(path)
+
+        val lastDotIndex = path.lastIndexOf('/')
+        val fileName_zip = path.substring(lastDotIndex + 1)
+        val lastDotIndex_1 = fileName_zip.lastIndexOf('.')
+        val fileName = fileName_zip.substring(0, lastDotIndex_1)
+        val fileStorage: File =
+            File(context.filesDir.absolutePath, "unzippedFile")
+        if (!fileStorage.exists()) {
+            fileStorage.mkdir()
+        }
+        zipFile.extractAll(fileStorage.absolutePath)
+        val filesList = fileStorage.listFiles()
+        for (file in filesList) {
+            val file_name = file.name.substring(0, file.name.lastIndexOf('.'))
+            if (file_name.equals(fileName, ignoreCase = true)) {
+                return file
+            }
+        }
+        return null
     }
 
     fun <I, O> prepareCall(
