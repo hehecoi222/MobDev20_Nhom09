@@ -11,7 +11,11 @@ import android.util.Log
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContract
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
 import net.lingala.zip4j.ZipFile
 import net.lingala.zip4j.model.ZipParameters
 import net.lingala.zip4j.model.enums.CompressionLevel
@@ -99,9 +103,13 @@ class StorageDatasourceImpl @Inject constructor(@ApplicationContext private val 
 //      dst : String = dia chi luu file
 //      Call this func : compressAsZip(myFile ,MainActivity.this.getFilesDir().getAbsolutePath() + "/compress.zip");
         override fun compressAndSaveFile(file : File): String {
-
 //  A file has name like this : 0000018c-0000-1000-0e1a-b609392c67ef
-            val dst : String = context.filesDir.absolutePath + "/" + file.name + ".zip"
+            var dst : String = ""
+            if (file.name.contains(".")) {
+                dst = context.filesDir.absolutePath + "/" + file.name.substring(0, file.name.lastIndexOf(".")) + ".zip"
+            } else {
+                dst = context.filesDir.absolutePath + "/" + file.name + ".zip"
+            }
 
             val dstFile = File(dst)
             //make dirs if necessary
@@ -219,4 +227,11 @@ class ChooseAttachment @Inject constructor(private val context: Context) :
             return null
         }
     }
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class StorageImpl {
+    @Binds
+    abstract fun bindStorage(storageDatasourceImpl: StorageDatasourceImpl) : StorageDatasource
 }

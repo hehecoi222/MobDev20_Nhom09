@@ -36,7 +36,6 @@ class EditorViewModel @Inject constructor(
     lateinit var noteSaveRepository: NoteSave
     private val stateSave = AtomicBoolean(false)
 
-    lateinit var storageDatasource : StorageDatasource
 
     var load = mutableStateOf(false)
 
@@ -109,19 +108,6 @@ class EditorViewModel @Inject constructor(
         TODO("Not yet implemented")
     }
 
-//    Function to save as bitmap and return the path to zip file
-    fun saveAsBitmap(bitmap : Bitmap) : String {
-        val myFile: File = File(
-            (context.filesDir.absolutePath + "/" + Uuid.generateType1UUID()).toString() + ".jpg"
-        )
-        val created = myFile.createNewFile()
-
-        val fos = FileOutputStream(myFile)
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
-        fos.flush()
-        fos.close()
-        return storageDatasource.compressAndSaveFile(myFile);
-    }
 
 
 }

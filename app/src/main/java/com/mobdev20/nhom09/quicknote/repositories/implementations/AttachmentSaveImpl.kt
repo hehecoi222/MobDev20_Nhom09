@@ -7,12 +7,10 @@ import javax.inject.Inject
 
 class AttachmentSaveImpl @Inject constructor() : AttachmentSave {
 
-    @Inject
-    lateinit var storageDataSource : StorageDatasource
-
-
-    override fun createFile(file: File): String {
-        return storageDataSource.compressAndSaveFile(file);
-    }
+//    @Inject
+//    lateinit var storageDatasource: StorageDatasource
+//    override fun createFile(file: File): String {
+//        return storageDatasource.compressAndSaveFile(file)
+//    }
 
 }

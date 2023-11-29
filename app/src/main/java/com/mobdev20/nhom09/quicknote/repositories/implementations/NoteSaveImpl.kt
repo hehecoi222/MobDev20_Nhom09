@@ -65,7 +65,6 @@ class NoteSaveImpl @Inject constructor(): NoteSave {
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class NoteSaveModule {
-
     @Binds
     abstract fun bindNoteSave(noteSaveImpl: NoteSaveImpl): NoteSave
 }
