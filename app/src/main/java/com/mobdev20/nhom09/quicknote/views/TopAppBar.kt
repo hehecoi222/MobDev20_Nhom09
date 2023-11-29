@@ -2,6 +2,7 @@ package com.mobdev20.nhom09.quicknote.views
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,7 +32,10 @@ fun CustomTopAppBar(
     onClickMore: () -> Unit = {},
     onClickFormat: () -> Unit = {},
     onClickAccount: () -> Unit = {},
-    offset: MutableState<Boolean>
+    onClickUndo: () -> Unit = {},
+    onClickRedo: () -> Unit = {},
+    redoEnable: MutableState<Boolean> = mutableStateOf(true),
+    offset: MutableState<Boolean> = mutableStateOf(false)
 ) {
     if (offset.value) {
         StatusBarColor(
@@ -50,7 +54,22 @@ fun CustomTopAppBar(
         modifier = modifier,
         color = if (offset.value) MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp) else MaterialTheme.colorScheme.surface
     ) {
-        TopAppBar(modifier = modifier, title = {}, actions = {
+        TopAppBar(modifier = modifier, title = {
+            Row {
+                IconButton(onClick = onClickUndo) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.outline_undo_24),
+                        contentDescription = null // TODO: Add string description
+                    )
+                }
+                IconButton(onClick = onClickRedo, enabled = redoEnable.value) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.baseline_redo_24),
+                        contentDescription = null // TODO: Add string description
+                    )
+                }
+            }
+        }, actions = {
             IconButton(onClick = onClickMore) {
                 Icon(
                     painter = painterResource(id = R.drawable.baseline_more_horiz_24),
@@ -81,5 +100,5 @@ fun CustomTopAppBar(
 @Preview
 @Composable
 fun CustomTopAppBarPreview() {
-    CustomTopAppBar(offset = mutableStateOf(true))
+    CustomTopAppBar(offset = mutableStateOf(true),)
 }

@@ -68,22 +68,24 @@ class MainActivity : AppCompatActivity() {
             setContent {
                 MainAppTheme {
                     darkMode = isSystemInDarkTheme()
-                    CustomTopAppBar(modifier = Modifier.fillMaxWidth(),
+                    CustomTopAppBar(
+                        modifier = Modifier.fillMaxWidth(),
                         offset = offset,
                         onClickFormat = { // Mở bảng format
                             if (kindOfBottomSheet.value == KindOfBottomSheet.FormatBar) {
                                 kindOfBottomSheet.value = KindOfBottomSheet.OldNotes
-                                val params = binding.noteContainer.layoutParams as ViewGroup.MarginLayoutParams
+                                val params =
+                                    binding.noteContainer.layoutParams as ViewGroup.MarginLayoutParams
                                 params.bottomMargin = TypedValue.applyDimension(
                                     TypedValue.COMPLEX_UNIT_DIP,
                                     20f,
                                     resources.displayMetrics
                                 ).toInt()
                                 binding.noteContainer.layoutParams = params
-                            }
-                            else {
+                            } else {
                                 kindOfBottomSheet.value = KindOfBottomSheet.FormatBar
-                                val params = binding.noteContainer.layoutParams as ViewGroup.MarginLayoutParams
+                                val params =
+                                    binding.noteContainer.layoutParams as ViewGroup.MarginLayoutParams
                                 params.bottomMargin = TypedValue.applyDimension(
                                     TypedValue.COMPLEX_UNIT_DIP,
                                     64f,
@@ -100,7 +102,10 @@ class MainActivity : AppCompatActivity() {
                             else
                                 kindOfBottomSheet.value = KindOfBottomSheet.MoreOpts
                         },
-                        onClickAccount = { editorViewModel.reverseHistory() })
+                        onClickUndo = { editorViewModel.reverseHistory() },
+                        onClickRedo = { editorViewModel.replayHistory(editorViewModel.redoHistory.removeLast()) },
+                        redoEnable = editorViewModel.redoEnabled
+                    )
                 }
             }
         }
@@ -214,7 +219,10 @@ class MainActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {
 //                TODO("Not yet implemented"), Implement text processor in helpers
                 val stringAfterProcessed = if (s.isNullOrEmpty()) "" else s.toString()
-
+                if (editorViewModel.currentReverseHistory.value != null) {
+                    editorViewModel.currentReverseHistory.value = null
+                    return
+                }
                 editorViewModel.editBody(stringAfterProcessed, noteContent.selectionEnd)
                 editorViewModel.saveNoteAfterDelay()
             }
@@ -233,11 +241,17 @@ class MainActivity : AppCompatActivity() {
                     return@collect
                 }
                 val edit = it.content
-                if (edit.isNotEmpty()) {
+                if (editorViewModel.currentReverseHistory.value != null) {
                     editorViewModel.load.value = false
-                    val cursor = if (noteContent.selectionEnd > it.content.length) it.content.length else noteContent.selectionEnd
+                    val cursor =
+                        if (noteContent.selectionEnd > edit.length) edit.length else noteContent.selectionEnd
                     noteContent.setText(edit)
                     noteContent.setSelection(cursor)
+                    return@collect
+                }
+                if (edit.isNotEmpty()) {
+                    editorViewModel.load.value = false
+                    noteContent.setText(edit)
                 } else if (edit.isEmpty() && it.id.isEmpty()) {
                     editorViewModel.load.value = false
                     noteContent.setText("")
