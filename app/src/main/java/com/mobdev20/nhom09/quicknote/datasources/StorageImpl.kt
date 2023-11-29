@@ -100,20 +100,8 @@ class StorageDatasourceImpl @Inject constructor(@ApplicationContext private val 
 //      Call this func : compressAsZip(myFile ,MainActivity.this.getFilesDir().getAbsolutePath() + "/compress.zip");
         override fun compressAndSaveFile(file : File): String {
 
-//
-            var fileName: String = file.name
-            val lastDotIndex = fileName.lastIndexOf('.')
-
-            // Check if there is a dot in the filename
-
-            // Check if there is a dot in the filename
-            if (lastDotIndex != -1 && lastDotIndex < fileName.length - 1) {
-                // Get the substring after the last dot
-                fileName = fileName.substring(0, lastDotIndex)
-            } else {
-                // No dot found or dot is at the end of the filename
-            }
-            val dst : String = context.filesDir.absolutePath + "/" + fileName + ".zip"
+//  A file has name like this : 0000018c-0000-1000-0e1a-b609392c67ef
+            val dst : String = context.filesDir.absolutePath + "/" + file.name + ".zip"
 
             val dstFile = File(dst)
             //make dirs if necessary
@@ -168,19 +156,23 @@ class StorageDatasourceImpl @Inject constructor(@ApplicationContext private val 
     override fun getFileFromInternal(path: String): File? {
         val zipFile = ZipFile(path)
 
+//    Get file name from zip file path
         val lastDotIndex = path.lastIndexOf('/')
         val fileName_zip = path.substring(lastDotIndex + 1)
         val lastDotIndex_1 = fileName_zip.lastIndexOf('.')
         val fileName = fileName_zip.substring(0, lastDotIndex_1)
+
+// Put it inside /unzippedFile folder
         val fileStorage: File =
             File(context.filesDir.absolutePath, "unzippedFile")
         if (!fileStorage.exists()) {
             fileStorage.mkdir()
         }
+
         zipFile.extractAll(fileStorage.absolutePath)
         val filesList = fileStorage.listFiles()
         for (file in filesList) {
-            val file_name = file.name.substring(0, file.name.lastIndexOf('.'))
+            val file_name = file.name;
             if (file_name.equals(fileName, ignoreCase = true)) {
                 return file
             }

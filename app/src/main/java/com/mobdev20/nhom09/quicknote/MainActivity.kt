@@ -1,6 +1,10 @@
 package com.mobdev20.nhom09.quicknote
 
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.graphics.Rect
 import android.os.Bundle
 import android.text.Editable
@@ -11,8 +15,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.addCallback
-import androidx.activity.result.contract.ActivityResultContract
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -218,7 +220,4 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(view)
     }
-
-//    View chon addAttachment prepareCall
-
 }
