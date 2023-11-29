@@ -23,11 +23,11 @@ import javax.inject.Inject
 class NoteSaveImpl @Inject constructor(): NoteSave {
     @Inject lateinit var noteDataStore: NoteDataStore
 
-    @Inject
-    lateinit var editorViewModel : EditorViewModel
-
-    @Inject
-    lateinit var storageDataSource : StorageDatasource
+//    @Inject
+//    lateinit var editorViewModel : EditorViewModel
+//
+//    @Inject
+//    lateinit var storageDataSource : StorageDatasource
     override suspend fun update(noteState: NoteState) {
         val model = """
             {
@@ -40,9 +40,9 @@ class NoteSaveImpl @Inject constructor(): NoteSave {
     }
 
 //    tra ve cho viewModel
-    override fun createFile(file: File): String {
-        return storageDataSource.compressAndSaveFile(file)
-    }
+//    override fun createFile(file: File): String {
+//        return storageDataSource.compressAndSaveFile(file)
+//    }
 
     override fun loadNote(id: String): Flow<NoteState?> {
         val noteFlow = noteDataStore.readFrom(id)

@@ -11,5 +11,5 @@ interface NoteSave {
     suspend fun update(noteState: NoteState)
 
     // nhan file tu ViewModel result -> tra path
-    fun createFile(file : File) : String
+//    fun createFile(file : File) : String
 }
