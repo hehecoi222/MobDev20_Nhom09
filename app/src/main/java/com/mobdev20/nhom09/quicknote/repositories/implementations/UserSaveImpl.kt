@@ -21,7 +21,6 @@ class UserSaveImpl @Inject constructor() : UserSave {
                     username = user.displayName!!
                 )
             }
-
         return UserState()
     }
 }

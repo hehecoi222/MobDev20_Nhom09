@@ -2,6 +2,7 @@ package com.mobdev20.nhom09.quicknote.helpers
 
 import com.mobdev20.nhom09.quicknote.state.HistoryType
 import com.mobdev20.nhom09.quicknote.state.NoteHistory
+import com.mobdev20.nhom09.quicknote.state.NoteOverview
 import com.mobdev20.nhom09.quicknote.state.NoteState
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.int
@@ -61,6 +62,17 @@ class NoteJson {
                         contentNew = Encoder.decode(it.jsonObject["timeStamp"]?.jsonPrimitive?.content.toString())
                     )
                 }?.toMutableList() ?: mutableListOf()
+            )
+        }
+
+        fun convertPartialJson(value: String): NoteOverview {
+            val model = Json.parseToJsonElement(value.toString()).jsonObject
+            return NoteOverview(
+                id = model["id"]?.jsonPrimitive?.content ?: "",
+                title = Encoder.decode(model["title"].toString()),
+                content = Encoder.decode(
+                    model["content"].toString()
+                ),
             )
         }
     }
