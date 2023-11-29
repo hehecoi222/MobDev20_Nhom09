@@ -162,6 +162,8 @@ class StorageDatasourceImpl @Inject constructor(@ApplicationContext private val 
 //  call : File newFile = getFileFromInternal(filePath);
 //    filePath  = from compressandsavefile-> String
     override fun getFileFromInternal(path: String): File? {
+//  A file has name like this : 0000018c-0000-1000-0e1a-b609392c67ef.zip
+
         val zipFile = ZipFile(path)
 
 //    Get file name from zip file path
@@ -169,6 +171,7 @@ class StorageDatasourceImpl @Inject constructor(@ApplicationContext private val 
         val fileName_zip = path.substring(lastDotIndex + 1)
         val lastDotIndex_1 = fileName_zip.lastIndexOf('.')
         val fileName = fileName_zip.substring(0, lastDotIndex_1)
+//    0000018c-0000-1000-0e1a-b609392c67ef
 
 // Put it inside /unzippedFile folder
         val fileStorage: File =
@@ -179,8 +182,14 @@ class StorageDatasourceImpl @Inject constructor(@ApplicationContext private val 
 
         zipFile.extractAll(fileStorage.absolutePath)
         val filesList = fileStorage.listFiles()
+        var file_name : String = ""
         for (file in filesList) {
-            val file_name = file.name;
+//            case jpg : 0000018c-0000-1000-0e1a-b609392c67ef.zip ->0000018c-0000-1000-0e1a-b609392c67ef.jpg
+            if (file.name.contains(".")) {
+                file_name = file.name.substring(0, file.name.lastIndexOf("."))
+            } else {
+                file_name = file.name;
+            }
             if (file_name.equals(fileName, ignoreCase = true)) {
                 return file
             }
