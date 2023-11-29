@@ -3,9 +3,8 @@ package com.mobdev20.nhom09.quicknote
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
-import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Assert.*
-import org.mockito.Mockito.*
+
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -15,6 +14,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.mobdev20.nhom09.quicknote.datasources.DataSources
+import com.mobdev20.nhom09.quicknote.helpers.Encoder
 import kotlinx.coroutines.delay
 
 
@@ -61,7 +61,20 @@ class ExampleInstrumentedTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         FirebaseApp.initializeApp(context)
 
-        DataSources().upload("/storage/emulated/0/Documents/datafortest/dataTest.json")
+        val model = """
+            {
+                "id": "-2",
+                "userId": "-6565",
+                "title": "Upload Test Title",
+                "content": "Upload Test Content",
+                "attachmentPaths": 	["storage/emulated/0/Documents/data4Test/downloadData/Background.png", "storage/emulated/0/Documents/data4Test/downloadData/Logo.png"]
+            }
+        """.trimIndent()
+
+
+
+        DataSources().upload(model)
+        Thread.sleep(50000)
     }
 
 

@@ -7,4 +7,9 @@
     <string name="more_opt_label_attach">Đính kèm</string>
     <string name="more_opt_label_noti_add">Thêm thông báo</string>
     <string name="more_opt_label_noti_edit">Sửa thông báo</string>
+    <string name="signin_btn">Đăng nhập với Google</string>
+    <string name="signout_btn">Đăng xuất</string>
+    <string name="copy_uid_btn">Sao chép ID người dùng</string>
+    <string name="user_id">ID người dùng</string>
+    <string name="sync_btn">Đồng bộ</string>
 </resources>
