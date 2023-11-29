@@ -1,5 +1,6 @@
 package com.mobdev20.nhom09.quicknote.views
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
@@ -50,7 +51,10 @@ import com.mobdev20.nhom09.quicknote.R
 fun BottomSheetDrawer(
     isKeyboardActive: MutableState<Boolean>,
     kindOfBottomSheet: MutableState<KindOfBottomSheet>,
-    expanded: MutableState<Boolean>
+    expanded: MutableState<Boolean>,
+    onClickBold: () -> Unit,
+    onClickItalic: () -> Unit,
+    onClickUnderline: () -> Unit,
 ) {
     val color = remember {
         mutableStateOf(Color(0))
@@ -85,14 +89,20 @@ fun BottomSheetDrawer(
                 ) {
                     KindOfBottomSheet.GetContent(kindOfBottomSheet = kindOfBottomSheet.value)
                 }
-                FormatBar(kindOfBottomSheet = kindOfBottomSheet)
+                FormatBar(kindOfBottomSheet = kindOfBottomSheet,
+                    onClickBold = onClickBold,
+                    onClickItalic = onClickItalic,
+                    onClickUnderline = onClickUnderline,)
             }
         }
     }
 }
 
 @Composable
-fun FormatBar(modifier: Modifier = Modifier, kindOfBottomSheet: MutableState<KindOfBottomSheet>) {
+fun FormatBar(modifier: Modifier = Modifier, kindOfBottomSheet: MutableState<KindOfBottomSheet>,
+              onClickBold: () -> Unit = {},
+              onClickItalic: () -> Unit = {},
+              onClickUnderline: () -> Unit = {},) {
     AnimatedVisibility(
         visible = kindOfBottomSheet.value == KindOfBottomSheet.FormatBar,
         enter = fadeIn() + slideInVertically(initialOffsetY = { full -> full }),
@@ -105,21 +115,21 @@ fun FormatBar(modifier: Modifier = Modifier, kindOfBottomSheet: MutableState<Kin
             color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
         ) {
             Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { }, modifier = Modifier.padding(start = 12.dp)) {
+                IconButton(onClick = onClickBold, modifier = Modifier.padding(start = 12.dp)) {
                     Icon(
                         painter = painterResource(id = R.drawable.baseline_format_bold_24),
                         contentDescription = null, // TODO: Add string description
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                IconButton(onClick = { }) {
+                IconButton(onClick = onClickItalic) {
                     Icon(
                         painter = painterResource(id = R.drawable.baseline_format_italic_24),
                         contentDescription = null, // TODO: Add string description,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                IconButton(onClick = { }) {
+                IconButton(onClick = onClickUnderline) {
                     Icon(
                         painter = painterResource(id = R.drawable.baseline_format_underlined_24),
                         contentDescription = null, // TODO: Add string description,
@@ -240,12 +250,14 @@ fun BottomSheet(
     }
 }
 
+@SuppressLint("UnrememberedMutableState")
 @Preview
 @Composable
 fun BottomSheetDrawerPreview() {
-    BottomSheetDrawer(expanded = mutableStateOf(false), isKeyboardActive = mutableStateOf(false), kindOfBottomSheet = mutableStateOf(KindOfBottomSheet.FormatBar))
+//    BottomSheetDrawer(expanded = mutableStateOf(false), isKeyboardActive = mutableStateOf(false), kindOfBottomSheet = mutableStateOf(KindOfBottomSheet.FormatBar))
 }
 
+@SuppressLint("UnrememberedMutableState")
 @Preview
 @Composable
 fun BottomSheetPreview() {

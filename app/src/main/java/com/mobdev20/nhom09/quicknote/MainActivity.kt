@@ -2,6 +2,7 @@ package com.mobdev20.nhom09.quicknote
 
 import android.content.res.Configuration
 import android.graphics.Rect
+import android.graphics.Typeface
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -23,6 +24,7 @@ import androidx.core.view.setPadding
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.color.DynamicColors
 import com.mobdev20.nhom09.quicknote.databinding.ActivityMainBinding
+import com.mobdev20.nhom09.quicknote.helpers.TextProcessor
 import com.mobdev20.nhom09.quicknote.ui.theme.MainAppTheme
 import com.mobdev20.nhom09.quicknote.viewmodels.EditorViewModel
 import com.mobdev20.nhom09.quicknote.views.BottomSheetDrawer
@@ -117,7 +119,28 @@ class MainActivity : AppCompatActivity() {
                     BottomSheetDrawer(
                         isKeyboardActive = isKeyboardActive,
                         kindOfBottomSheet = kindOfBottomSheet,
-                        expanded = expanded
+                        expanded = expanded,
+                        onClickBold = {
+                            val noteContent = binding.noteBody
+                            val string = TextProcessor.setFormat(noteContent, Typeface.BOLD)
+                            val spannable = TextProcessor.convertFormat(string)
+                            noteContent.setText(spannable)
+                            noteContent.setSelection(noteContent.text.length)
+                        },
+                        onClickItalic = {
+                            val noteContent = binding.noteBody
+                            val string = TextProcessor.setFormat(noteContent, Typeface.ITALIC)
+                            val spannable = TextProcessor.convertFormat(string)
+                            noteContent.setText(spannable)
+                            noteContent.setSelection(noteContent.text.length)
+                        },
+                        onClickUnderline = {
+                            val noteContent = binding.noteBody
+                            val string = TextProcessor.setFormat(noteContent, 3)
+                            val spannable = TextProcessor.convertFormat(string)
+                            noteContent.setText(spannable)
+                            noteContent.setSelection(noteContent.text.length)
+                        },
                     )
                 }
             }
