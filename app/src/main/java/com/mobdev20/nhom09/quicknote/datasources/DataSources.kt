@@ -1,19 +1,17 @@
 package com.mobdev20.nhom09.quicknote.datasources
 
 import android.net.Uri
-import android.os.Looper
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 import com.google.firebase.firestore.DocumentSnapshot
 import org.json.JSONObject
 import java.io.File
-import java.io.FileWriter
 import android.util.Log
-import android.os.Handler
-import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.StorageException
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 
 
 class DataSources {
@@ -26,19 +24,13 @@ class DataSources {
     }
 
 
-    private fun jsonToData(jsonString: String) : Map<String, Any> {
-        val jsonObject = JSONObject(jsonString)
-        val dataItem = mutableMapOf<String, Any>()
-
-        for (key in jsonObject.keys()) {
-            dataItem[key] = jsonObject.get(key) as Any
-        }
-
-        return dataItem
+    private fun jsonToData(jsonString: String): Map<String, Any> {
+        val mapper = jacksonObjectMapper()
+        return mapper.readValue(jsonString)
     }
 
     private fun uploadData(data: Map<String, Any>) {
-        val docID = data["noteID"] as String
+        val docID = data["id"] as String
 
         db.collection(collection)
             .document(docID)
@@ -50,10 +42,10 @@ class DataSources {
                     uploadImg(it as String,  cloudPath(it, docID))
                 }
 
-                Log.i("CompleteQwe", "Success upload")
+                Log.i("UploadComplete", "Success upload")
             }
             .addOnFailureListener {
-                Log.e("UnCompleteQwe", it.toString())
+                Log.e("!UploadComplete", it.toString())
             }
     }
 
@@ -67,9 +59,23 @@ class DataSources {
         val uploadTask = storageRef.putFile(file)
 
         uploadTask.addOnSuccessListener {
-            Log.i("CompleteQwe", "Success upload")
+            Log.i("UploadComplete", "Success upload image")
         }.addOnFailureListener {
-            Log.e("UnCompleteQwe", it.toString())
+                exception ->
+            Log.e("!UploadComplete", exception.message.toString())
+            Log.e("!UploadComplete", "localStorage: $localPath")
+            Log.e("!UploadComplete", "cloudStorage: $cloudPath")
+            when (exception) {
+                is StorageException -> {
+                    Log.e("!UploadComplete",
+                        "HTTP result code:" + exception.httpResultCode)
+                    exception.cause.let { cause ->
+                        Log.e("!UploadComplete", "Inner exception: ", cause)
+                    }
+                }
+                else -> {
+                }
+            }
         }
     }
 

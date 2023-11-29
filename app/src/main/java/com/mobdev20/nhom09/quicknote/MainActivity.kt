@@ -1,11 +1,11 @@
 package com.mobdev20.nhom09.quicknote
 
+import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Rect
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
@@ -18,10 +18,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
-import androidx.core.view.marginBottom
-import androidx.core.view.setPadding
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.color.DynamicColors
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import com.mobdev20.nhom09.quicknote.databinding.ActivityMainBinding
 import com.mobdev20.nhom09.quicknote.ui.theme.MainAppTheme
 import com.mobdev20.nhom09.quicknote.viewmodels.EditorViewModel
@@ -42,6 +43,8 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var editorViewModel: EditorViewModel
 
+    private lateinit var auth: FirebaseAuth
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Set theme ứng dụng
         setTheme(
@@ -54,6 +57,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
+
+        auth = Firebase.auth
 
         // khởi tạo các giá trị UI
         val noteContent = binding.noteBody
@@ -102,9 +107,14 @@ class MainActivity : AppCompatActivity() {
                             else
                                 kindOfBottomSheet.value = KindOfBottomSheet.MoreOpts
                         },
-                        onClickUndo = { editorViewModel.reverseHistory() },
+                        onClickUndo = {
+                            editorViewModel.reverseHistory()
+                        },
                         onClickRedo = { editorViewModel.replayHistory(editorViewModel.redoHistory.removeLast()) },
-                        redoEnable = editorViewModel.redoEnabled
+                        redoEnable = editorViewModel.redoEnabled,
+                        onClickAccount = {
+                            startActivity(Intent(context, AccountActivity::class.java))
+                        }
                     )
                 }
             }
@@ -117,7 +127,19 @@ class MainActivity : AppCompatActivity() {
                     BottomSheetDrawer(
                         isKeyboardActive = isKeyboardActive,
                         kindOfBottomSheet = kindOfBottomSheet,
-                        expanded = expanded
+                        expanded = expanded,
+                        noteList = editorViewModel.noteList,
+                        onDeleteNote = {
+                            editorViewModel.deleteNote()
+                        },
+                        onExpandNote = {
+                            editorViewModel.loadNoteList()
+                        },
+                        onClickNote = {
+                            editorViewModel.selectNoteToLoad(it)
+                            expanded.value = false
+                            noteContent.requestFocus()
+                        }
                     )
                 }
             }
@@ -131,8 +153,20 @@ class MainActivity : AppCompatActivity() {
                         value = editorViewModel.noteState.collectAsState().value.title,
                         onValueChange = {
                             editorViewModel.editTitle(it)
+                        }, noteList = editorViewModel.noteList.toList(),
+                        createNote = {
                             editorViewModel.saveNoteAfterDelay()
-                        }) {
+                            noteContent.requestFocus()
+                        },
+                        onSelectNote = {
+                            editorViewModel.selectNoteToLoad(it)
+                            noteContent.requestFocus()
+                        },
+                        clearState = {
+                            editorViewModel.clearState()
+                        },
+                        isClearAvailable = editorViewModel.noteState.collectAsState().value.id.isNotEmpty()
+                    ) {
                         binding.noteBody.requestFocus()
                     }
                 }
@@ -152,7 +186,7 @@ class MainActivity : AppCompatActivity() {
             isKeyboardActive.value = heightDiff > typed
 
             // Logic ẩn hiện bottom và padding content
-            if (isKeyboardActive.value && kindOfBottomSheet.value != KindOfBottomSheet.FormatBar) {
+            if (isKeyboardActive.value && kindOfBottomSheet.value == KindOfBottomSheet.OldNotes) {
                 kindOfBottomSheet.value = KindOfBottomSheet.OldNotes
                 val params = binding.noteContainer.layoutParams as ViewGroup.MarginLayoutParams
                 params.bottomMargin = TypedValue.applyDimension(
@@ -188,7 +222,6 @@ class MainActivity : AppCompatActivity() {
         }
         noteContent.setOnTouchListener { view: View, motionEvent: MotionEvent ->
             run {
-                Log.d("ACTION", motionEvent.action.toString())
                 when (motionEvent.action) {
                     MotionEvent.ACTION_MOVE -> {
                         isScrolling.value = true
@@ -223,8 +256,8 @@ class MainActivity : AppCompatActivity() {
                     editorViewModel.currentReverseHistory.value = null
                     return
                 }
+                if (editorViewModel.noteState.value.id.isEmpty()) return
                 editorViewModel.editBody(stringAfterProcessed, noteContent.selectionEnd)
-                editorViewModel.saveNoteAfterDelay()
             }
         })
 
@@ -260,5 +293,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         setContentView(view)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        editorViewModel.updateUser(auth = auth)
+        editorViewModel.loadNoteList()
     }
 }

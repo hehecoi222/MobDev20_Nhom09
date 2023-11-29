@@ -32,9 +32,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,20 +48,18 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mobdev20.nhom09.quicknote.R
+import com.mobdev20.nhom09.quicknote.state.NoteOverview
 
 @Composable
 fun BottomSheetDrawer(
     isKeyboardActive: MutableState<Boolean>,
     kindOfBottomSheet: MutableState<KindOfBottomSheet>,
-    expanded: MutableState<Boolean>
+    expanded: MutableState<Boolean>,
+    noteList: SnapshotStateList<NoteOverview> = mutableStateListOf(),
+    onClickNote: (String) -> Unit = {},
+    onDeleteNote: () -> Unit = {},
+    onExpandNote: () -> Unit = {},
 ) {
-    val color = remember {
-        mutableStateOf(Color(0))
-    }
-    val colorOnce = remember {
-        mutableStateOf(false)
-    }
-    val scope = rememberCoroutineScope()
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -81,9 +82,18 @@ fun BottomSheetDrawer(
                 BottomSheet(
                     isKeyboardActive = isKeyboardActive.value,
                     kindOfBottomSheet = kindOfBottomSheet,
-                    expanded = expanded
+                    expanded = expanded,
+                    onExpandNote = onExpandNote
                 ) {
-                    KindOfBottomSheet.GetContent(kindOfBottomSheet = kindOfBottomSheet.value)
+                    KindOfBottomSheet.GetContent(
+                        kindOfBottomSheet = kindOfBottomSheet.value,
+                        oldNoteListState = noteList,
+                        onClickNote = onClickNote,
+                        onClickDelete = onDeleteNote,
+                        onClickAttachment = {
+                            kindOfBottomSheet.value = KindOfBottomSheet.AttachmentTab
+                        }
+                    )
                 }
                 FormatBar(kindOfBottomSheet = kindOfBottomSheet)
             }
@@ -158,7 +168,8 @@ fun BottomSheet(
     isKeyboardActive: Boolean = false,
     kindOfBottomSheet: MutableState<KindOfBottomSheet>,
     expanded: MutableState<Boolean>,
-    content: @Composable ColumnScope.() -> Unit = {}
+    onExpandNote: () -> Unit = {},
+    content: @Composable ColumnScope.() -> Unit = {},
 ) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
@@ -175,6 +186,11 @@ fun BottomSheet(
         KindOfBottomSheet.MoreOpts -> {
             expanded.value = true
             180.dp
+        }
+
+        KindOfBottomSheet.AttachmentTab -> {
+            expanded.value = true
+            360.dp
         }
 
         else -> {
@@ -207,6 +223,7 @@ fun BottomSheet(
                         indication = null, interactionSource = interactionSource
                     ) {
                         kindOfBottomSheet.value = KindOfBottomSheet.OldNotes
+                        onExpandNote()
                         expanded.value = !expanded.value
                     }
                     .fillMaxWidth()
@@ -228,7 +245,8 @@ fun BottomSheet(
                         color = MaterialTheme.colorScheme.surfaceVariant
                     ) {}
                 }
-                AnimatedVisibility(visible = expanded.value,
+                AnimatedVisibility(
+                    visible = expanded.value,
                     modifier = Modifier.fillMaxSize(),
                     enter = fadeIn() + slideInVertically(initialOffsetY = { full -> full }),
                     exit = fadeOut() + slideOutVertically(targetOffsetY = { fullHeight -> fullHeight })
@@ -243,13 +261,10 @@ fun BottomSheet(
 @Preview
 @Composable
 fun BottomSheetDrawerPreview() {
-    BottomSheetDrawer(expanded = mutableStateOf(false), isKeyboardActive = mutableStateOf(false), kindOfBottomSheet = mutableStateOf(KindOfBottomSheet.FormatBar))
-}
-
-@Preview
-@Composable
-fun BottomSheetPreview() {
-    BottomSheet(expanded = mutableStateOf(true), kindOfBottomSheet = mutableStateOf(KindOfBottomSheet.OldNotes), content = {
-        KindOfBottomSheet.GetContent(kindOfBottomSheet = KindOfBottomSheet.OldNotes)
-    })
+//    BottomSheetDrawer(
+//        expanded = mutableStateOf(false),
+//        isKeyboardActive = mutableStateOf(false),
+//        kindOfBottomSheet = mutableStateOf(KindOfBottomSheet.FormatBar),
+//        settings =
+//    )
 }

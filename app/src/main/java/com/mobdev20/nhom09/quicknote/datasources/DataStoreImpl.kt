@@ -17,10 +17,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
+import javax.inject.Qualifier
 
 interface NoteDataStore {
     suspend fun writeTo(key: String, value: String)
-    fun  readFrom(key: String): Flow<String?>
+    fun readFrom(key: String): Flow<String?>
+
+    fun readAll(): Flow<List<String?>>
+
+    suspend fun delete(key: String)
 }
 
 class NoteDataStoreImpl @Inject constructor(@ApplicationContext private val context: Context) :
@@ -38,11 +43,24 @@ class NoteDataStoreImpl @Inject constructor(@ApplicationContext private val cont
             noteStore[stringPreferencesKey(key)]
         }
     }
+
+    override fun readAll(): Flow<List<String?>> {
+        return context.dataStore.data.map { noteStore ->
+            noteStore.asMap().values.toList() as List<String?>
+        }
+    }
+
+    override suspend fun delete(key: String) {
+        val KEY = stringPreferencesKey(key)
+        context.dataStore.edit { noteStore ->
+            noteStore.remove(KEY)
+        }
+    }
 }
 
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class NoteDataStoreModule {
     @Binds
-    abstract fun bindNoteDataStore(noteDataStoreImpl: NoteDataStoreImpl) : NoteDataStore
+    abstract fun bindNoteDataStoreForNotes(noteDataStoreImpl: NoteDataStoreImpl) : NoteDataStore
 }

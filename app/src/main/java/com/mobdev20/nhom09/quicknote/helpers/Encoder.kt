@@ -10,7 +10,6 @@ class Encoder {
         }
 
         fun decode(value: String): String {
-            Log.d("DECODER", value)
             return Base64.decode(value, Base64.NO_PADDING).decodeToString()
         }
     }

@@ -22,6 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mobdev20.nhom09.quicknote.R
+import com.mobdev20.nhom09.quicknote.state.UserState
 import com.mobdev20.nhom09.quicknote.ui.theme.NavigationBarColor
 import com.mobdev20.nhom09.quicknote.ui.theme.StatusBarColor
 
@@ -35,7 +36,8 @@ fun CustomTopAppBar(
     onClickUndo: () -> Unit = {},
     onClickRedo: () -> Unit = {},
     redoEnable: MutableState<Boolean> = mutableStateOf(true),
-    offset: MutableState<Boolean> = mutableStateOf(false)
+    offset: MutableState<Boolean> = mutableStateOf(false),
+    userInfo: UserState = UserState()
 ) {
     if (offset.value) {
         StatusBarColor(
