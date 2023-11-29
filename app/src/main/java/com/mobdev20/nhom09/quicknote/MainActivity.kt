@@ -214,7 +214,10 @@ class MainActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {
 //                TODO("Not yet implemented"), Implement text processor in helpers
                 val stringAfterProcessed = if (s.isNullOrEmpty()) "" else s.toString()
-
+                if (editorViewModel.currentReverseHistory.value != null) {
+                    editorViewModel.currentReverseHistory.value = null
+                    return
+                }
                 editorViewModel.editBody(stringAfterProcessed, noteContent.selectionEnd)
                 editorViewModel.saveNoteAfterDelay()
             }
@@ -233,11 +236,17 @@ class MainActivity : AppCompatActivity() {
                     return@collect
                 }
                 val edit = it.content
-                if (edit.isNotEmpty()) {
+                if (editorViewModel.currentReverseHistory.value != null) {
                     editorViewModel.load.value = false
-                    val cursor = if (noteContent.selectionEnd > it.content.length) it.content.length else noteContent.selectionEnd
+                    val cursor =
+                        if (noteContent.selectionEnd > edit.length) edit.length else noteContent.selectionEnd
                     noteContent.setText(edit)
                     noteContent.setSelection(cursor)
+                    return@collect
+                }
+                if (edit.isNotEmpty()) {
+                    editorViewModel.load.value = false
+                    noteContent.setText(edit)
                 } else if (edit.isEmpty() && it.id.isEmpty()) {
                     editorViewModel.load.value = false
                     noteContent.setText("")

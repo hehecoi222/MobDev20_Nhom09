@@ -1,6 +1,7 @@
 package com.mobdev20.nhom09.quicknote.viewmodels
 
 import android.util.Log
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
+import kotlin.math.max
 
 //@HiltViewModel
 class EditorViewModel @Inject constructor() : ViewModel() {
@@ -28,7 +30,9 @@ class EditorViewModel @Inject constructor() : ViewModel() {
     private val stateSave = AtomicBoolean(false)
 
     val load = mutableStateOf(false)
-    val redoHistory = mutableListOf<HistoryType>()
+    val redoHistory = mutableListOf<NoteHistory>()
+    val currentReverseHistory: MutableState<NoteHistory?> = mutableStateOf(null)
+    private var oldCursorPosition = 0;
 
     fun createNote() {
         if (!stateSave.get()) {
@@ -81,47 +85,73 @@ class EditorViewModel @Inject constructor() : ViewModel() {
     }
 
     fun editBody(newBody: String, currentCursorPosition: Int) {
-        addHistory(_noteState.value.content, newBody, currentCursorPosition)
+        addHistory(_noteState.value.content, newBody, currentCursorPosition, oldCursorPosition)
         Log.d("CURRENT_STATE", _noteState.value.history.toString())
         _noteState.update {
             it.copy(content = newBody)
         }
+        oldCursorPosition = currentCursorPosition
     }
 
-    fun addHistory(oldContent: String, newC: String, currentPos: Int) {
-        val newContent = newC.subSequence(0, currentPos)
+    fun addHistory(oldContent: String, newContent: String, currentPos: Int, oldPos: Int) {
         val oldSplit = oldContent.split("\n")
         val newSplit = newContent.split("\n")
-        var oldI =
-            if (oldSplit.lastIndex > newSplit.lastIndex) newSplit.lastIndex else oldSplit.lastIndex
-        var newI = newSplit.lastIndex
-        while (oldI > -1 && newI > -1 && oldSplit[oldI].compareTo(newSplit[newI]) != 0) {
-            if (oldI > newI) {
-                val history = NoteHistory(
-                    contentOld = oldSplit[oldI],
-                    type = HistoryType.DELETE,
-                    line = oldI + 1
-                )
-                _noteState.value.history.add(history)
-                oldI--
-            } else if (oldI < newI) {
+        var oldI = 0
+        var newI = 0
+        val maxI = maxOf(oldSplit.size, newSplit.size)
+
+        while (oldI < maxI && newI < maxI) {
+            if (oldI == oldSplit.size) {
                 val history = NoteHistory(
                     contentNew = newSplit[newI],
                     type = HistoryType.ADD,
                     line = newI + 1
                 )
                 _noteState.value.history.add(history)
-                newI--
-            } else {
+                newI++
+            } else if (newI == newSplit.size) {
                 val history = NoteHistory(
-                    line = newI + 1,
-                    type = HistoryType.EDIT,
                     contentOld = oldSplit[oldI],
-                    contentNew = newSplit[newI]
+                    type = HistoryType.DELETE,
+                    line = oldI + 1
                 )
                 _noteState.value.history.add(history)
-                oldI--
-                newI--
+                return
+            } else {
+                if (oldSplit[oldI].compareTo(newSplit[newI]) != 0) {
+                    if (oldI + 1 < oldSplit.size && oldSplit[oldI + 1].compareTo(newSplit[newI]) == 0) {
+                        val history = NoteHistory(
+                            contentOld = oldSplit[oldI],
+                            type = HistoryType.DELETE,
+                            line = oldI + 1
+                        )
+                        _noteState.value.history.add(history)
+                        newI++
+                        oldI += 2
+                    } else if (newI + 1 < newSplit.size && newSplit[newI + 1].compareTo(oldSplit[oldI]) == 0) {
+                        val history = NoteHistory(
+                            contentNew = newSplit[newI],
+                            type = HistoryType.ADD,
+                            line = newI + 1
+                        )
+                        _noteState.value.history.add(history)
+                        oldI++
+                        newI += 2
+                    } else {
+                        val history = NoteHistory(
+                            line = newI + 1,
+                            type = HistoryType.EDIT,
+                            contentOld = oldSplit[oldI],
+                            contentNew = newSplit[newI]
+                        )
+                        _noteState.value.history.add(history)
+                        oldI++
+                        newI++
+                    }
+                } else {
+                    oldI++
+                    newI++
+                }
             }
         }
     }
@@ -130,7 +160,9 @@ class EditorViewModel @Inject constructor() : ViewModel() {
         if (_noteState.value.history.isEmpty()) {return}
         load.value = true
         val history = _noteState.value.history.removeLast()
-        var newSplit = _noteState.value.content.split("\n").toMutableList()
+        currentReverseHistory.value = history
+        redoHistory.add(history)
+        val newSplit = _noteState.value.content.split("\n").toMutableList()
         if (history.type == HistoryType.ADD) {
             newSplit.removeAt(history.line - 1)
         } else if (history.type == HistoryType.DELETE) {
