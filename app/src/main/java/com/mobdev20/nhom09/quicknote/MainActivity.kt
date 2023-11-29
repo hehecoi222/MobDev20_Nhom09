@@ -68,22 +68,24 @@ class MainActivity : AppCompatActivity() {
             setContent {
                 MainAppTheme {
                     darkMode = isSystemInDarkTheme()
-                    CustomTopAppBar(modifier = Modifier.fillMaxWidth(),
+                    CustomTopAppBar(
+                        modifier = Modifier.fillMaxWidth(),
                         offset = offset,
                         onClickFormat = { // Mở bảng format
                             if (kindOfBottomSheet.value == KindOfBottomSheet.FormatBar) {
                                 kindOfBottomSheet.value = KindOfBottomSheet.OldNotes
-                                val params = binding.noteContainer.layoutParams as ViewGroup.MarginLayoutParams
+                                val params =
+                                    binding.noteContainer.layoutParams as ViewGroup.MarginLayoutParams
                                 params.bottomMargin = TypedValue.applyDimension(
                                     TypedValue.COMPLEX_UNIT_DIP,
                                     20f,
                                     resources.displayMetrics
                                 ).toInt()
                                 binding.noteContainer.layoutParams = params
-                            }
-                            else {
+                            } else {
                                 kindOfBottomSheet.value = KindOfBottomSheet.FormatBar
-                                val params = binding.noteContainer.layoutParams as ViewGroup.MarginLayoutParams
+                                val params =
+                                    binding.noteContainer.layoutParams as ViewGroup.MarginLayoutParams
                                 params.bottomMargin = TypedValue.applyDimension(
                                     TypedValue.COMPLEX_UNIT_DIP,
                                     64f,
@@ -100,7 +102,10 @@ class MainActivity : AppCompatActivity() {
                             else
                                 kindOfBottomSheet.value = KindOfBottomSheet.MoreOpts
                         },
-                        onClickAccount = { editorViewModel.reverseHistory() })
+                        onClickUndo = { editorViewModel.reverseHistory() },
+                        onClickRedo = { editorViewModel.replayHistory(editorViewModel.redoHistory.removeLast()) },
+                        redoEnable = editorViewModel.redoEnabled
+                    )
                 }
             }
         }

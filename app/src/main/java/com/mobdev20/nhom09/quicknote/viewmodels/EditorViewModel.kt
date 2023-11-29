@@ -33,6 +33,7 @@ class EditorViewModel @Inject constructor() : ViewModel() {
     val redoHistory = mutableListOf<NoteHistory>()
     val currentReverseHistory: MutableState<NoteHistory?> = mutableStateOf(null)
     private var oldCursorPosition = 0;
+    val redoEnabled = mutableStateOf(false)
 
     fun createNote() {
         if (!stateSave.get()) {
@@ -99,6 +100,7 @@ class EditorViewModel @Inject constructor() : ViewModel() {
         var oldI = 0
         var newI = 0
         val maxI = maxOf(oldSplit.size, newSplit.size)
+        val histories = mutableListOf<NoteHistory>()
 
         while (oldI < maxI && newI < maxI) {
             if (oldI == oldSplit.size) {
@@ -107,7 +109,7 @@ class EditorViewModel @Inject constructor() : ViewModel() {
                     type = HistoryType.ADD,
                     line = newI + 1
                 )
-                _noteState.value.history.add(history)
+                histories.add(history)
                 newI++
             } else if (newI == newSplit.size) {
                 val history = NoteHistory(
@@ -115,8 +117,8 @@ class EditorViewModel @Inject constructor() : ViewModel() {
                     type = HistoryType.DELETE,
                     line = oldI + 1
                 )
-                _noteState.value.history.add(history)
-                return
+                histories.add(history)
+                oldI++
             } else {
                 if (oldSplit[oldI].compareTo(newSplit[newI]) != 0) {
                     if (oldI + 1 < oldSplit.size && oldSplit[oldI + 1].compareTo(newSplit[newI]) == 0) {
@@ -125,7 +127,7 @@ class EditorViewModel @Inject constructor() : ViewModel() {
                             type = HistoryType.DELETE,
                             line = oldI + 1
                         )
-                        _noteState.value.history.add(history)
+                        histories.add(history)
                         newI++
                         oldI += 2
                     } else if (newI + 1 < newSplit.size && newSplit[newI + 1].compareTo(oldSplit[oldI]) == 0) {
@@ -134,7 +136,7 @@ class EditorViewModel @Inject constructor() : ViewModel() {
                             type = HistoryType.ADD,
                             line = newI + 1
                         )
-                        _noteState.value.history.add(history)
+                        histories.add(history)
                         oldI++
                         newI += 2
                     } else {
@@ -144,7 +146,7 @@ class EditorViewModel @Inject constructor() : ViewModel() {
                             contentOld = oldSplit[oldI],
                             contentNew = newSplit[newI]
                         )
-                        _noteState.value.history.add(history)
+                        histories.add(history)
                         oldI++
                         newI++
                     }
@@ -154,6 +156,11 @@ class EditorViewModel @Inject constructor() : ViewModel() {
                 }
             }
         }
+        val last = histories.lastOrNull()
+        if (last != null && last.type == HistoryType.DELETE) {
+            histories.reverse()
+        }
+        _noteState.value.history.addAll(histories)
     }
 
     fun reverseHistory() {
@@ -170,6 +177,25 @@ class EditorViewModel @Inject constructor() : ViewModel() {
         } else {
             newSplit[history.line - 1] = history.contentOld
         }
+        redoEnabled.value = true
+        _noteState.update {
+            it.copy(content = newSplit.joinToString("\n"))
+        }
+    }
+
+    fun replayHistory(history: NoteHistory) {
+        load.value = true
+        currentReverseHistory.value = history
+        _noteState.value.history.add(history)
+        val newSplit = _noteState.value.content.split("\n").toMutableList()
+        if (history.type == HistoryType.ADD) {
+            newSplit.add(history.line - 1, history.contentNew)
+        } else if (history.type == HistoryType.DELETE) {
+            newSplit.removeAt(history.line - 1)
+        } else {
+            newSplit[history.line - 1] = history.contentNew
+        }
+        if (redoHistory.isEmpty()) redoEnabled.value = false
         _noteState.update {
             it.copy(content = newSplit.joinToString("\n"))
         }
