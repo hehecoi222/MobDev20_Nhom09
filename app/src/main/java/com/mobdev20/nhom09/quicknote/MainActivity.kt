@@ -300,4 +300,5 @@ class MainActivity : AppCompatActivity() {
         editorViewModel.updateUser(auth = auth)
         editorViewModel.loadNoteList()
     }
+
 }

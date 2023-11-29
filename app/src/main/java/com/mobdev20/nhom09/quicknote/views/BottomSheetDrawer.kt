@@ -185,12 +185,12 @@ fun BottomSheet(
 
         KindOfBottomSheet.MoreOpts -> {
             expanded.value = true
-            180.dp
+            screenHeight / 4
         }
 
         KindOfBottomSheet.AttachmentTab -> {
             expanded.value = true
-            360.dp
+            screenHeight / 2
         }
 
         else -> {
