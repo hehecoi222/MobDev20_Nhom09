@@ -1,5 +1,6 @@
 package com.mobdev20.nhom09.quicknote.datasources
 
+import android.content.Intent
 import android.net.Uri
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
@@ -14,6 +15,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.mobdev20.nhom09.quicknote.helpers.NoteJson
 import com.mobdev20.nhom09.quicknote.state.NoteState
+import kotlinx.coroutines.runBlocking
 
 
 class DataSources {
@@ -21,7 +23,7 @@ class DataSources {
     private val db = FirebaseFirestore.getInstance()
     private val storage = Firebase.storage
 
-    fun upload(jsonString: String){ //argument userID for collection
+    fun upload(jsonString: String) { //argument userID for collection
         uploadData(jsonToData(jsonString))
     }
 
@@ -31,23 +33,23 @@ class DataSources {
         return mapper.readValue(jsonString)
     }
 
-    private fun uploadData(data: Map<String, Any>) {
+    private fun uploadData (data: Map< String, Any>) {
         val docID = data["id"] as String
 
         db.collection(collection)
             .document(docID)
             .set(data, SetOptions.merge())
-            .addOnSuccessListener {
+            .addOnSuccessListener() {
                 val paths = data["attachmentPaths"] as MutableList<*>
 
                 paths.forEach{
                     uploadImg(it as String,  cloudPath(it, docID))
                 }
 
-                Log.i("UploadComplete", "Success upload")
+                Log.i("UploadRecordComplete", "Success upload")
             }
             .addOnFailureListener {
-                Log.e("!UploadComplete", it.toString())
+                Log.e("!UploadRecordComplete", it.toString())
             }
     }
 
@@ -55,13 +57,15 @@ class DataSources {
         return docID + "/" + File(localPath).name // userID + "/" + docID + "/" + file.name
     }
 
-    fun uploadImg(localPath: String, cloudPath: String) {
+    private fun uploadImg(localPath: String, cloudPath: String) {
         val storageRef = storage.reference.child(cloudPath)
         val file = Uri.fromFile(File(localPath))
         val uploadTask = storageRef.putFile(file)
 
         uploadTask.addOnSuccessListener {
             Log.i("UploadComplete", "Success upload image")
+            Log.i("!UploadComplete", "localStorage: $localPath")
+            Log.i("!UploadComplete", "cloudStorage: $cloudPath")
         }.addOnFailureListener {
                 exception ->
             Log.e("!UploadComplete", exception.message.toString())
@@ -98,14 +102,13 @@ class DataSources {
                         downloadImg(cloudPath(it as String, docID), it)
                     }
 
-                    createNoteState(docToJsonString(documentSnapshot))
-                    Log.i("DownloadSuccess", docToJsonString(documentSnapshot))
+                    Log.i("DownloadRecordSuccess", docToJsonString(documentSnapshot))
                 } else {
-                    Log.e("!DownloadSuccess", "No such document")
+                    Log.e("!DownloadRecordSuccess", "No such document")
                 }
             }
             .addOnFailureListener {
-                Log.e("!DownloadSuccess", it.toString())
+                Log.e("!DownloadRecordSuccess", it.toString())
             }
     }
 
@@ -124,7 +127,7 @@ class DataSources {
         return jsonObject
     }
 
-    private fun docToJsonString(docSnapshot: DocumentSnapshot?) : String {
+    fun docToJsonString(docSnapshot: DocumentSnapshot?) : String {
         val data = docSnapshot!!.data
         val mapper = jacksonObjectMapper()
         return mapper.writeValueAsString(data)

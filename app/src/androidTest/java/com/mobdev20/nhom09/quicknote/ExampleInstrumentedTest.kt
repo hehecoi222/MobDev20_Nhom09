@@ -36,7 +36,12 @@ class ExampleInstrumentedTest {
     val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(
         android.Manifest.permission.READ_EXTERNAL_STORAGE,
         android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-        //android.Manifest.permission.MANAGE_EXTERNAL_STORAGE
+        android.Manifest.permission.READ_MEDIA_IMAGES,
+        //android.Manifest.permission.INTERNET,
+        //android.Manifest.permission_group.STORAGE,
+        //android.Manifest.permission_group.READ_MEDIA_VISUAL,
+        //android.Manifest.permission_group.READ_MEDIA_AURAL,
+        //android.Manifest.permission.MANAGE_EXTERNAL_STORAGE,
     )
 
     @Test
@@ -56,18 +61,18 @@ class ExampleInstrumentedTest {
         assert(hasWritePermission)
     }
 
-    @Test
+    /*@Test
     fun uploadTest() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         FirebaseApp.initializeApp(context)
 
         val model = """
             {
-                "id": "-2",
-                "userId": "-6565",
+                "id": "-3",
+                "userId": "-65565",
                 "title": "Upload Test Title",
                 "content": "Upload Test Content",
-                "attachmentPaths": 	["storage/emulated/0/Documents/data4Test/downloadData/Background.png", "storage/emulated/0/Documents/data4Test/downloadData/Logo.png"]
+                "attachmentPaths": 	["storage/emulated/0/Documents/data4Test/downloadData/Try.jpg", "storage/emulated/0/Documents/data4Test/downloadData/Logo.png"]
             }
         """.trimIndent()
 
@@ -75,17 +80,17 @@ class ExampleInstrumentedTest {
 
         DataSources().upload(model)
         Thread.sleep(50000)
-    }
+    }*/
 
 
-    /*@Test
-    fun testDownload() = runBlockingTest {
+    @Test
+    fun testDownload() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         FirebaseApp.initializeApp(context)
 
-        DataSources().download("-1")
+        DataSources().download("-3")
         Thread.sleep(50000) // Adjust this delay based on your network speed
-    }*/
+    }
 
 
 }
