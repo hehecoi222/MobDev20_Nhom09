@@ -28,12 +28,16 @@ import com.mobdev20.nhom09.quicknote.R
 @Composable
 fun MoreOptionSheet(modifier: Modifier = Modifier,
                     onClickDelete: () -> Unit,
-                    onClickAttachments: () -> Unit) {
+                    onClickAttachments: () -> Unit,
+                    onClickBackup: () -> Unit,
+                    onClickSync: () -> Unit
+                    ) {
     Row(modifier = modifier, horizontalArrangement = Arrangement.SpaceAround) {
         MoreOption(
             icon = R.drawable.outline_cloud_upload_24,
             value = R.string.more_opt_label_backup,
-            visible = true
+            visible = true,
+            onClick = onClickBackup
         )
         MoreOption(
             icon = R.drawable.outline_delete_24,
@@ -42,9 +46,10 @@ fun MoreOptionSheet(modifier: Modifier = Modifier,
             onClick = onClickDelete
         )
         MoreOption(
-            icon = R.drawable.outline_share_24,
-            value = R.string.more_opt_label_share,
-            visible = true
+            icon = R.drawable.outline_cloud_sync_24,
+            value = R.string.sync_btn,
+            visible = true,
+            onClick = onClickSync
         )
         MoreOption(
             icon = R.drawable.outline_attach_file_24,
@@ -52,11 +57,11 @@ fun MoreOptionSheet(modifier: Modifier = Modifier,
             visible = true,
             onClick = onClickAttachments
         )
-        MoreOption(
-            icon = R.drawable.outline_notification_add_24,
-            value = R.string.more_opt_label_noti_add,
-            visible = true
-        )
+//        MoreOption(
+//            icon = R.drawable.outline_notification_add_24,
+//            value = R.string.more_opt_label_noti_add,
+//            visible = true
+//        )
     }
 }
 

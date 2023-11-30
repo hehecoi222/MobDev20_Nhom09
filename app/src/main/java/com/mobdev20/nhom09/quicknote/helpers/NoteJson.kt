@@ -20,6 +20,11 @@ class NoteJson {
                 "userId": "${noteState.userId}",
                 "title": "${Encoder.encode(noteState.title)}",
                 "content": "${Encoder.encode(noteState.content)}",
+                "attachmentsPath": [
+                """ + noteState.attachments.map {
+                """ "${it}" """.trimIndent()
+            }.joinToString(",\n") + """
+                    ],
                 "history": [
                     """ + noteState.history.map {
                 """
@@ -39,7 +44,7 @@ class NoteJson {
             return model
         }
 
-        fun convertJson(value: String) : NoteState {
+        fun convertJson(value: String): NoteState {
             val model = Json.parseToJsonElement(value.toString()).jsonObject
             return NoteState(
                 id = model["id"]?.jsonPrimitive?.content ?: "",
@@ -48,9 +53,11 @@ class NoteJson {
                 content = Encoder.decode(
                     model["content"].toString()
                 ),
+                attachments = model["attachmentsPath"]?.jsonArray?.map {
+                    it?.jsonPrimitive?.content ?: ""
+                }!!.toMutableList(),
                 history = model["history"]?.jsonArray?.map {
-                    NoteHistory(
-                        timestamp = Instant.parse(it.jsonObject["timestamp"]?.jsonPrimitive?.content),
+                    NoteHistory(timestamp = Instant.parse(it.jsonObject["timestamp"]?.jsonPrimitive?.content),
                         userId = it.jsonObject["userId"]?.jsonPrimitive?.content ?: "",
                         line = it.jsonObject["line"]?.jsonPrimitive?.int ?: 0,
                         type = it.jsonObject["type"]?.jsonPrimitive?.content?.let { it1 ->
@@ -59,11 +66,11 @@ class NoteJson {
                             )
                         } ?: HistoryType.EDIT,
                         contentOld = Encoder.decode(it.jsonObject["contentOld"]?.jsonPrimitive?.content.toString()),
-                        contentNew = Encoder.decode(it.jsonObject["timeStamp"]?.jsonPrimitive?.content.toString())
-                    )
+                        contentNew = Encoder.decode(it.jsonObject["timeStamp"]?.jsonPrimitive?.content.toString()))
                 }?.toMutableList() ?: mutableListOf()
             )
         }
+
 
         fun convertPartialJson(value: String): NoteOverview {
             val model = Json.parseToJsonElement(value.toString()).jsonObject
@@ -79,13 +86,18 @@ class NoteJson {
         fun getFilenameFromAttachPath(path: String): String {
             val filename = path.substring(path.lastIndexOf("/") + 1)
             val fileSpilt = filename.split(".")
-            return fileSpilt[0] + fileSpilt[2]
+            return fileSpilt[0] + "." + fileSpilt.subList(2, fileSpilt.size - 1).joinToString(".")
         }
 
-        fun parseFilename(filename: String): String {
-            val fileSpilt = filename.split(".")
-            val fileNamePath = fileSpilt.subList(0, fileSpilt.size - 1).joinToString("")
-            return fileNamePath + "." + fileSpilt.last()
+        fun getFileNewName(filename: String, addition: String): String {
+            val fileSpilt = filename.split(".").toMutableList()
+            fileSpilt.add(1, addition)
+            return fileSpilt.joinToString(".")
+        }
+
+        fun getLast(filepath: String): String {
+            val fileLast = filepath.split(".")
+            return fileLast.subList(0, fileLast.size - 1).joinToString(".")
         }
     }
 }

@@ -3,27 +3,36 @@ package com.mobdev20.nhom09.quicknote
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Rect
+import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.addCallback
+import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.color.DynamicColors
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.mobdev20.nhom09.quicknote.databinding.ActivityMainBinding
+import com.mobdev20.nhom09.quicknote.datasources.ChooseAttachment
+import com.mobdev20.nhom09.quicknote.datasources.StorageDatasource
+import com.mobdev20.nhom09.quicknote.helpers.NoteJson
+import com.mobdev20.nhom09.quicknote.helpers.TextProcessor
 import com.mobdev20.nhom09.quicknote.ui.theme.MainAppTheme
 import com.mobdev20.nhom09.quicknote.viewmodels.EditorViewModel
 import com.mobdev20.nhom09.quicknote.views.BottomSheetDrawer
@@ -32,16 +41,22 @@ import com.mobdev20.nhom09.quicknote.views.KindOfBottomSheet
 import com.mobdev20.nhom09.quicknote.views.NoteTitleTextField
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
+class MainActivity() : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var darkMode = false
 
     @Inject
     lateinit var editorViewModel: EditorViewModel
+
+    @Inject
+    lateinit var storageDatasource: StorageDatasource
+
+    lateinit var getContent : ActivityResultLauncher<Unit>
 
     private lateinit var auth: FirebaseAuth
 
@@ -67,6 +82,11 @@ class MainActivity : AppCompatActivity() {
         val kindOfBottomSheet = mutableStateOf(KindOfBottomSheet.OldNotes)
         val expanded = mutableStateOf(false)
         val isScrolling = mutableStateOf(false)
+        getContent = activityResultRegistry.register("attachment", ChooseAttachment(this.applicationContext, storageDatasource)) {
+            if (it != null) {
+                editorViewModel.addAttachment(it as File)
+            }
+        }
 
         // Nạp Compose TopBar vào
         binding.topAppBar.apply {
@@ -139,6 +159,67 @@ class MainActivity : AppCompatActivity() {
                             editorViewModel.selectNoteToLoad(it)
                             expanded.value = false
                             noteContent.requestFocus()
+                        },
+                        onClickAttachment = {
+                            getContent.launch(Unit)
+                        },
+                        attachmentList = editorViewModel.currentAttachment,
+                        onDeleteAttachment = {
+                            editorViewModel.deleteAttachment(it)
+                        },
+                        onClickBackup = {
+                            editorViewModel.backupNote()
+                        },
+                        onClickSync = {
+                            editorViewModel.restoreNote()
+                        },
+                        onClickBold = {
+                            val noteContent = binding.noteBody
+                            val string = TextProcessor.setFormat(noteContent, Typeface.BOLD)
+                            val spannable = TextProcessor.convertFormat(string)
+//                            noteContent.setText(spannable)
+//                            noteContent.setSelection(noteContent.text.length)
+                            TextProcessor.renderFormat(noteContent, Typeface.BOLD)
+                        },
+                        onClickItalic = {
+                            val noteContent = binding.noteBody
+                            val string = TextProcessor.setFormat(noteContent, Typeface.ITALIC)
+                            val spannable = TextProcessor.convertFormat(string)
+//                            noteContent.setText(spannable)
+//                            noteContent.setSelection(noteContent.text.length)
+                            TextProcessor.renderFormat(noteContent, Typeface.ITALIC)
+                        },
+                        onClickUnderline = {
+                            val noteContent = binding.noteBody
+                            val string = TextProcessor.setFormat(noteContent, 3)
+                            val spannable = TextProcessor.convertFormat(string)
+//                            noteContent.setText(spannable)
+//                            noteContent.setSelection(noteContent.text.length)
+                            TextProcessor.renderFormat(noteContent, 3)
+                        },
+                        onClickOpen = {
+                            val file = File(NoteJson.getLast(it.filepath))
+
+                            // Get URI and MIME type of file
+                            Log.d("FILE_TAG", application.packageName + ".provider" + file)
+
+                            // Get URI and MIME type of file
+                            val uri: Uri? = try {
+                                FileProvider.getUriForFile(
+                                    context,
+                                    applicationContext.packageName + ".fileprovider",
+                                    file)
+                            } catch (e: IllegalArgumentException) {
+                                Log.e("File Selector",
+                                    "The selected file can't be shared: $file")
+                                null
+                            }
+                            val mime = contentResolver.getType(uri!!)
+                            val intent = Intent()
+                            intent.action = Intent.ACTION_VIEW
+                            intent.setDataAndType(uri, mime)
+                            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            startActivity(intent)
                         }
                     )
                 }
@@ -284,7 +365,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 if (edit.isNotEmpty()) {
                     editorViewModel.load.value = false
+                    val cursor =
+                        if (noteContent.selectionEnd > edit.length) edit.length else noteContent.selectionEnd
                     noteContent.setText(edit)
+                    noteContent.setSelection(cursor)
                 } else if (edit.isEmpty() && it.id.isEmpty()) {
                     editorViewModel.load.value = false
                     noteContent.setText("")
@@ -299,5 +383,10 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         editorViewModel.updateUser(auth = auth)
         editorViewModel.loadNoteList()
+    }
+
+    override fun onDestroy() {
+        getContent.unregister()
+        super.onDestroy()
     }
 }

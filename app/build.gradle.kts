@@ -69,6 +69,10 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation("net.lingala.zip4j:zip4j:2.9.0")
+    implementation("androidx.activity:activity-ktx:1.8.1")
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
     implementation("com.google.firebase:firebase-storage-ktx:20.3.0")
     implementation("com.google.firebase:firebase-core:21.1.1")
     implementation(platform("com.google.firebase:firebase-auth:9.4.0"))
@@ -80,7 +84,6 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     debugImplementation(libs.ui.tooling)
     testImplementation(libs.junit)
-    androidTestImplementation("androidx.test:rules:1.4.0")
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
 }

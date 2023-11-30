@@ -1,11 +1,10 @@
 package com.mobdev20.nhom09.quicknote.views
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
+import com.mobdev20.nhom09.quicknote.state.Attachment
 import com.mobdev20.nhom09.quicknote.state.NoteOverview
 import com.mobdev20.nhom09.quicknote.views.sheetsContent.Attachments
 import com.mobdev20.nhom09.quicknote.views.sheetsContent.MoreOptionSheet
@@ -27,6 +26,12 @@ enum class KindOfBottomSheet(val value: Int) {
             onClickNote: (String) -> Unit,
             onClickDelete: () -> Unit,
             onClickAttachment: () -> Unit,
+            attachmentList: SnapshotStateList<Attachment>,
+            onDeleteAttachment: (Attachment) -> Unit,
+            onAddAttachment: () -> Unit,
+            onclickBackup: () -> Unit,
+            onClickSync: () -> Unit,
+            onClickOpen: (Attachment) -> Unit,
             onClickNotification: () -> Unit = {}
         ) {
             when (kindOfBottomSheet) {
@@ -38,10 +43,18 @@ enum class KindOfBottomSheet(val value: Int) {
 
                 MoreOpts -> MoreOptionSheet(
                     onClickDelete = onClickDelete,
-                    onClickAttachments = onClickAttachment
+                    onClickAttachments = onClickAttachment,
+                    onClickBackup = onclickBackup,
+                    onClickSync = onClickSync
                 )
 
-                AttachmentTab -> Attachments()
+                AttachmentTab -> Attachments(
+                    attachments = attachmentList,
+                    onClickRemove = onDeleteAttachment,
+                    onClickAdd = onAddAttachment,
+                    onClickOpen = onClickOpen,
+                )
+
                 else -> {}
             }
         }
