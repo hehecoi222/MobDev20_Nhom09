@@ -38,7 +38,7 @@ import com.mobdev20.nhom09.quicknote.state.Attachment
 fun Attachments(
     modifier: Modifier = Modifier,
     onClickAdd: () -> Unit = {},
-    onClickRemove: (String) -> Unit = {},
+    onClickRemove: (Attachment) -> Unit = {},
     attachments: SnapshotStateList<Attachment> = mutableStateListOf()
 ) {
     Column(modifier = modifier.padding(16.dp)) {
@@ -69,7 +69,7 @@ fun Attachments(
 private fun AttachmentItem(
     modifier: Modifier = Modifier,
     attachment: Attachment,
-    onClickRemove: (String) -> Unit = {}
+    onClickRemove: (Attachment) -> Unit = {}
 ) {
     ElevatedCard(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -96,7 +96,7 @@ private fun AttachmentItem(
             }
             Spacer(modifier = Modifier.size(4.dp))
             IconButton(onClick = {
-                onClickRemove(attachment.filepath)
+                onClickRemove(attachment)
             }, modifier = Modifier.size(24.dp)) {
                 Icon(
                     painter = painterResource(id = R.drawable.outline_delete_24),

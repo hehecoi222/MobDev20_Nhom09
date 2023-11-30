@@ -1,17 +1,22 @@
 package com.mobdev20.nhom09.quicknote
 
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.graphics.Rect
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.addCallback
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.ActivityResultRegistry
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +29,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.mobdev20.nhom09.quicknote.databinding.ActivityMainBinding
+import com.mobdev20.nhom09.quicknote.datasources.ChooseAttachment
+import com.mobdev20.nhom09.quicknote.datasources.StorageDatasource
 import com.mobdev20.nhom09.quicknote.ui.theme.MainAppTheme
 import com.mobdev20.nhom09.quicknote.viewmodels.EditorViewModel
 import com.mobdev20.nhom09.quicknote.views.BottomSheetDrawer
@@ -32,16 +39,22 @@ import com.mobdev20.nhom09.quicknote.views.KindOfBottomSheet
 import com.mobdev20.nhom09.quicknote.views.NoteTitleTextField
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
+class MainActivity() : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var darkMode = false
 
     @Inject
     lateinit var editorViewModel: EditorViewModel
+
+    @Inject
+    lateinit var storageDatasource: StorageDatasource
+
+    lateinit var getContent : ActivityResultLauncher<Unit>
 
     private lateinit var auth: FirebaseAuth
 
@@ -67,6 +80,11 @@ class MainActivity : AppCompatActivity() {
         val kindOfBottomSheet = mutableStateOf(KindOfBottomSheet.OldNotes)
         val expanded = mutableStateOf(false)
         val isScrolling = mutableStateOf(false)
+        getContent = activityResultRegistry.register("attachment", ChooseAttachment(this.applicationContext, storageDatasource)) {
+            if (it != null) {
+                editorViewModel.addAttachment(it as File)
+            }
+        }
 
         // Nạp Compose TopBar vào
         binding.topAppBar.apply {
@@ -139,6 +157,19 @@ class MainActivity : AppCompatActivity() {
                             editorViewModel.selectNoteToLoad(it)
                             expanded.value = false
                             noteContent.requestFocus()
+                        },
+                        onClickAttachment = {
+                            getContent.launch(Unit)
+                        },
+                        attachmentList = editorViewModel.currentAttachment,
+                        onDeleteAttachment = {
+                            editorViewModel.deleteAttachment(it)
+                        },
+                        onClickBackup = {
+                            editorViewModel.backupNote()
+                        },
+                        onClickSync = {
+                            editorViewModel.restoreNote()
                         }
                     )
                 }
@@ -284,7 +315,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 if (edit.isNotEmpty()) {
                     editorViewModel.load.value = false
+                    val cursor =
+                        if (noteContent.selectionEnd > edit.length) edit.length else noteContent.selectionEnd
                     noteContent.setText(edit)
+                    noteContent.setSelection(cursor)
                 } else if (edit.isEmpty() && it.id.isEmpty()) {
                     editorViewModel.load.value = false
                     noteContent.setText("")
@@ -301,4 +335,8 @@ class MainActivity : AppCompatActivity() {
         editorViewModel.loadNoteList()
     }
 
+    override fun onDestroy() {
+        getContent.unregister()
+        super.onDestroy()
+    }
 }

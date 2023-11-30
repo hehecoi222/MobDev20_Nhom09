@@ -48,6 +48,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mobdev20.nhom09.quicknote.R
+import com.mobdev20.nhom09.quicknote.state.Attachment
 import com.mobdev20.nhom09.quicknote.state.NoteOverview
 
 @Composable
@@ -59,6 +60,12 @@ fun BottomSheetDrawer(
     onClickNote: (String) -> Unit = {},
     onDeleteNote: () -> Unit = {},
     onExpandNote: () -> Unit = {},
+    onClickAttachment: () -> Unit = {},
+    attachmentList: SnapshotStateList<Attachment> = mutableStateListOf(),
+    onDeleteAttachment: (Attachment) -> Unit = {},
+    onClickBackup: () -> Unit = {},
+    onClickSync: () -> Unit = {},
+    onClickNotification: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -92,7 +99,12 @@ fun BottomSheetDrawer(
                         onClickDelete = onDeleteNote,
                         onClickAttachment = {
                             kindOfBottomSheet.value = KindOfBottomSheet.AttachmentTab
-                        }
+                        },
+                        attachmentList = attachmentList,
+                        onAddAttachment = onClickAttachment,
+                        onDeleteAttachment = onDeleteAttachment,
+                        onclickBackup = onClickBackup,
+                        onClickSync = onClickSync
                     )
                 }
                 FormatBar(kindOfBottomSheet = kindOfBottomSheet)

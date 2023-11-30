@@ -1,5 +1,6 @@
 package com.mobdev20.nhom09.quicknote.viewmodels
 
+import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
@@ -8,12 +9,12 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.auth
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
+import com.mobdev20.nhom09.quicknote.datasources.StorageDatasource
 import com.mobdev20.nhom09.quicknote.helpers.Uuid
+import com.mobdev20.nhom09.quicknote.repositories.BackupNote
 import com.mobdev20.nhom09.quicknote.repositories.NoteSave
 import com.mobdev20.nhom09.quicknote.repositories.UserSave
+import com.mobdev20.nhom09.quicknote.state.Attachment
 import com.mobdev20.nhom09.quicknote.state.HistoryType
 import com.mobdev20.nhom09.quicknote.state.NoteHistory
 import com.mobdev20.nhom09.quicknote.state.NoteOverview
@@ -23,12 +24,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
-import kotlin.math.max
 
 //@HiltViewModel
 class EditorViewModel @Inject constructor() : ViewModel() {
@@ -45,6 +47,13 @@ class EditorViewModel @Inject constructor() : ViewModel() {
 
     @Inject
     lateinit var userSaveRepository: UserSave
+
+    @Inject
+    lateinit var backupNote: BackupNote
+
+    @Inject
+    lateinit var storageDatasource: StorageDatasource
+
     private val stateSave = AtomicBoolean(false)
 
     val load = mutableStateOf(false)
@@ -55,6 +64,64 @@ class EditorViewModel @Inject constructor() : ViewModel() {
 
     private val _noteList = mutableStateListOf<NoteOverview>()
     val noteList: SnapshotStateList<NoteOverview> = _noteList
+
+    val currentAttachment = mutableStateListOf<Attachment>()
+    fun loadAttachment() {
+        currentAttachment.clear()
+        _noteState.value.attachments.forEach { attachment ->
+            if (attachment.isNotEmpty()) {
+                val flow = storageDatasource.getFileFromInternal(attachment)
+                viewModelScope.launch {
+                    flow.collect {
+                        if (it != null) {
+                            currentAttachment.add(
+                                Attachment(
+                                    attachment, BitmapFactory.decodeFile(it.absolutePath)
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun deloadAttachment() {
+        currentAttachment.forEach {
+            viewModelScope.launch {
+                storageDatasource.deloadFile(it.filepath)
+            }
+        }
+    }
+
+    fun deleteAttachment(attachment: Attachment) {
+        viewModelScope.launch {
+            currentAttachment.remove(attachment)
+            _noteState.value.attachments.removeIf {
+                it == attachment.filepath
+            }
+            saveNoteAfterDelay()
+            storageDatasource.deleteFile(attachment.filepath)
+        }
+    }
+
+    fun addAttachment(file: File) {
+        if (_noteState.value.id.isEmpty()) createNote()
+        val flow = storageDatasource.getFileFromInternal(file.absolutePath)
+        viewModelScope.launch {
+            flow.collect {
+                if (it != null) {
+                    currentAttachment.add(
+                        Attachment(
+                            file.absolutePath, BitmapFactory.decodeFile(it.absolutePath)
+                        )
+                    )
+                }
+            }
+        }
+        _noteState.value.attachments.add(file.absolutePath)
+        saveNoteAfterDelay()
+    }
 
     fun deleteNote() {
         viewModelScope.launch {
@@ -105,8 +172,8 @@ class EditorViewModel @Inject constructor() : ViewModel() {
         }
         if (!stateSave.get()) {
             stateSave.set(true)
+            load.value = false
             viewModelScope.launch {
-                delay(2000)
                 _noteState.update {
                     it.copy(
                         timeUpdate = Instant.now()
@@ -115,6 +182,19 @@ class EditorViewModel @Inject constructor() : ViewModel() {
                 noteSaveRepository.update(_noteState.value)
                 stateSave.set(false)
             }
+        }
+    }
+
+    fun backupNote() {
+        viewModelScope.launch {
+            backupNote.backup(_noteState.value.id)
+        }
+    }
+
+    fun restoreNote() {
+        viewModelScope.launch {
+            backupNote.restore(_noteState.value.id)
+            selectNoteToLoad(_noteState.value.id)
         }
     }
 
@@ -154,13 +234,14 @@ class EditorViewModel @Inject constructor() : ViewModel() {
 
     fun selectNoteToLoad(noteId: String) {
         val flow = noteSaveRepository.loadNote(noteId)
-        viewModelScope.launch {
-            flow.collect { col ->
+        val scope = viewModelScope.launch {
+            flow.cancellable().collect { col ->
                 if (col != null) {
                     _noteState.update {
                         load.value = true
                         col
                     }
+                    loadAttachment()
                     return@collect
                 }
             }
@@ -309,6 +390,9 @@ class EditorViewModel @Inject constructor() : ViewModel() {
     fun clearState() {
         load.value = true
         _noteState.value = NoteState()
-        Log.d("NOTE_STATE", _noteState.value.id)
+        deloadAttachment()
+        currentAttachment.clear()
+        currentReverseHistory.value = null
+        redoHistory.clear()
     }
 }
