@@ -1,21 +1,27 @@
 package com.mobdev20.nhom09.quicknote.datasources
 
-import android.content.Intent
+
 import android.net.Uri
+import org.json.JSONObject
+import java.io.File
+import android.util.Log
+
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 import com.google.firebase.firestore.DocumentSnapshot
-import org.json.JSONObject
-import java.io.File
-import android.util.Log
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.StorageException
+
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+
 import com.mobdev20.nhom09.quicknote.helpers.NoteJson
 import com.mobdev20.nhom09.quicknote.state.NoteState
-import kotlinx.coroutines.runBlocking
+
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 
 class DataSources {
@@ -23,10 +29,32 @@ class DataSources {
     private val db = FirebaseFirestore.getInstance()
     private val storage = Firebase.storage
 
-    fun upload(jsonString: String) { //argument userID for collection
+    /**
+     * Upload process is asynchronous and background task
+     * @param: note that need to be uploaded
+     * */
+    fun upload(note : NoteState) { //argument userID for collection?
+        uploadData(jsonToData(NoteJson.convertModel(note)))
+    }
+
+    fun upload(jsonString : String) { //argument userID for collection?
         uploadData(jsonToData(jsonString))
     }
 
+    /**
+     * Because download process is asynchronous so the download code must be run in coroutine.
+     * @param: the id of note that need to be downloaded
+     * @return: JSON if the download record process are successfully
+     * @return: "null" if the download record process are unsuccessfully
+     * @sample: ExampleInstrumentedTest.testDownload() {GlobalScope.launch}
+     * @note: Should return NoteState but example data still plain text, not encoded yet
+     * */
+    suspend fun download(noteID: String) : String {
+        //val downloadedNote = NoteJson.convertJson(downloadData(noteID))
+        val downloadedNote = docToJsonString(downloadData(noteID))
+        // To be careful, this code is separated into 2 line to make sure ()await work properly
+        return downloadedNote
+    }
 
     private fun jsonToData(jsonString: String): Map<String, Any> {
         val mapper = jacksonObjectMapper()
@@ -64,13 +92,13 @@ class DataSources {
 
         uploadTask.addOnSuccessListener {
             Log.i("UploadComplete", "Success upload image")
-            Log.i("!UploadComplete", "localStorage: $localPath")
-            Log.i("!UploadComplete", "cloudStorage: $cloudPath")
-        }.addOnFailureListener {
-                exception ->
+            Log.i("UploadComplete", "localStorage: $localPath")
+            Log.i("UploadComplete", "cloudStorage: $cloudPath")
+        }.addOnFailureListener { exception ->
             Log.e("!UploadComplete", exception.message.toString())
             Log.e("!UploadComplete", "localStorage: $localPath")
             Log.e("!UploadComplete", "cloudStorage: $cloudPath")
+
             when (exception) {
                 is StorageException -> {
                     Log.e("!UploadComplete",
@@ -85,35 +113,31 @@ class DataSources {
         }
     }
 
-    fun download(noteID: String) {
-        downloadData(noteID)
-    }
-
-    private fun downloadData(docID: String) {
+    private suspend fun downloadData(docID: String) = withContext(Dispatchers.IO) {
         db.collection(collection)
             .document(docID)
             .get()
-            .addOnSuccessListener { documentSnapshot ->
-                if (documentSnapshot != null && documentSnapshot.exists()) {
-                    val jsonObject = docToJson(documentSnapshot)
-                    val paths = jsonObject.get("attachmentPaths") as MutableList<*>
-
-                    paths.forEach{
-                        downloadImg(cloudPath(it as String, docID), it)
-                    }
-
-                    Log.i("DownloadRecordSuccess", docToJsonString(documentSnapshot))
-                } else {
-                    Log.e("!DownloadRecordSuccess", "No such document")
-                }
-            }
             .addOnFailureListener {
                 Log.e("!DownloadRecordSuccess", it.toString())
             }
+            .addOnSuccessListener { documentSnapshot ->
+                if (documentSnapshot != null && documentSnapshot.exists()) {
+                    processDownloadDoc(documentSnapshot, docID)
+                    Log.i("DownloadRecordSuccess", docToJsonString(documentSnapshot))
+                    //processDownloadDoc(documentSnapshot, docID)
+                } else {
+                    Log.e("!DownloadRecordSuccess", "No such document")
+                }
+            }.await()
     }
 
-    private fun createNoteState(jsonString: String) : NoteState {
-        return NoteJson.convertJson(jsonString)
+    private fun processDownloadDoc(doc : DocumentSnapshot, docID : String){
+        val jsonObject = docToJson(doc)
+        val paths = jsonObject.get("attachmentPaths") as MutableList<*>
+
+        paths.forEach{
+            downloadImg(cloudPath(it as String, docID), it)
+        }
     }
 
     private fun docToJson(docSnapshot: DocumentSnapshot) : JSONObject {
@@ -127,7 +151,7 @@ class DataSources {
         return jsonObject
     }
 
-    fun docToJsonString(docSnapshot: DocumentSnapshot?) : String {
+    private fun docToJsonString(docSnapshot: DocumentSnapshot?) : String {
         val data = docSnapshot!!.data
         val mapper = jacksonObjectMapper()
         return mapper.writeValueAsString(data)
@@ -145,6 +169,7 @@ class DataSources {
                 Log.e("!DownloadSuccess", exception.message.toString())
                 Log.e("!DownloadSuccess", "localStorage: $localPath")
                 Log.e("!DownloadSuccess", "cloudStorage: $cloudPath")
+
                 when (exception) {
                     is StorageException -> {
                         Log.e("!DownloadSuccess",

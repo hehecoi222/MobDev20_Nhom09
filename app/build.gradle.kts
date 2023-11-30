@@ -84,6 +84,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     debugImplementation(libs.ui.tooling)
     testImplementation(libs.junit)
+    androidTestImplementation("androidx.test:rules:1.4.0")
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
 }
