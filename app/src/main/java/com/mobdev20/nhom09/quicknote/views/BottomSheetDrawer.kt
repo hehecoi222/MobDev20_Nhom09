@@ -65,6 +65,10 @@ fun BottomSheetDrawer(
     onDeleteAttachment: (Attachment) -> Unit = {},
     onClickBackup: () -> Unit = {},
     onClickSync: () -> Unit = {},
+    onClickBold: () -> Unit = {},
+    onClickItalic: () -> Unit = {},
+    onClickUnderline: () -> Unit = {},
+    onClickOpen: (Attachment) -> Unit,
     onClickNotification: () -> Unit = {}
 ) {
     Box(
@@ -104,17 +108,26 @@ fun BottomSheetDrawer(
                         onAddAttachment = onClickAttachment,
                         onDeleteAttachment = onDeleteAttachment,
                         onclickBackup = onClickBackup,
-                        onClickSync = onClickSync
+                        onClickSync = onClickSync,
+                        onClickOpen = onClickOpen,
                     )
                 }
-                FormatBar(kindOfBottomSheet = kindOfBottomSheet)
+                FormatBar(
+                    kindOfBottomSheet = kindOfBottomSheet,
+                    onClickUnderline = onClickUnderline,
+                    onClickItalic = onClickItalic,
+                    onClickBold = onClickBold
+                )
             }
         }
     }
 }
 
 @Composable
-fun FormatBar(modifier: Modifier = Modifier, kindOfBottomSheet: MutableState<KindOfBottomSheet>) {
+fun FormatBar(
+    modifier: Modifier = Modifier, kindOfBottomSheet: MutableState<KindOfBottomSheet>,
+    onClickBold: () -> Unit, onClickItalic: () -> Unit, onClickUnderline: () -> Unit
+) {
     AnimatedVisibility(
         visible = kindOfBottomSheet.value == KindOfBottomSheet.FormatBar,
         enter = fadeIn() + slideInVertically(initialOffsetY = { full -> full }),
@@ -127,48 +140,48 @@ fun FormatBar(modifier: Modifier = Modifier, kindOfBottomSheet: MutableState<Kin
             color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
         ) {
             Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { }, modifier = Modifier.padding(start = 12.dp)) {
+                IconButton(onClick = onClickBold, modifier = Modifier.padding(start = 12.dp)) {
                     Icon(
                         painter = painterResource(id = R.drawable.baseline_format_bold_24),
                         contentDescription = null, // TODO: Add string description
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                IconButton(onClick = { }) {
+                IconButton(onClick = onClickItalic) {
                     Icon(
                         painter = painterResource(id = R.drawable.baseline_format_italic_24),
                         contentDescription = null, // TODO: Add string description,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                IconButton(onClick = { }) {
+                IconButton(onClick = onClickUnderline) {
                     Icon(
                         painter = painterResource(id = R.drawable.baseline_format_underlined_24),
                         contentDescription = null, // TODO: Add string description,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                IconButton(onClick = { }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.baseline_format_color_fill_24),
-                        contentDescription = null, // TODO: Add string description,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Divider(
-                    modifier = Modifier
-                        .padding(horizontal = 8.dp)
-                        .fillMaxHeight(.5f)
-                        .width(2.dp),
-                    color = MaterialTheme.colorScheme.outline
-                )
-                IconButton(onClick = { }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.outline_check_box_24),
-                        contentDescription = null, // TODO: Add string description,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+//                IconButton(onClick = { }) {
+//                    Icon(
+//                        painter = painterResource(id = R.drawable.baseline_format_color_fill_24),
+//                        contentDescription = null, // TODO: Add string description,
+//                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+//                    )
+//                }
+//                Divider(
+//                    modifier = Modifier
+//                        .padding(horizontal = 8.dp)
+//                        .fillMaxHeight(.5f)
+//                        .width(2.dp),
+//                    color = MaterialTheme.colorScheme.outline
+//                )
+//                IconButton(onClick = { }) {
+//                    Icon(
+//                        painter = painterResource(id = R.drawable.outline_check_box_24),
+//                        contentDescription = null, // TODO: Add string description,
+//                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+//                    )
+//                }
             }
         }
     }

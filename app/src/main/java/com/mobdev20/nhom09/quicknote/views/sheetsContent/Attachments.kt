@@ -4,6 +4,7 @@ import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,6 +40,7 @@ fun Attachments(
     modifier: Modifier = Modifier,
     onClickAdd: () -> Unit = {},
     onClickRemove: (Attachment) -> Unit = {},
+    onClickOpen: (Attachment) -> Unit,
     attachments: SnapshotStateList<Attachment> = mutableStateListOf()
 ) {
     Column(modifier = modifier.padding(16.dp)) {
@@ -59,7 +61,7 @@ fun Attachments(
         }
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(attachments) {
-                AttachmentItem(attachment = it, onClickRemove = onClickRemove)
+                AttachmentItem(attachment = it, onClickRemove = onClickRemove, onClickOpen = onClickOpen)
             }
         }
     }
@@ -69,9 +71,14 @@ fun Attachments(
 private fun AttachmentItem(
     modifier: Modifier = Modifier,
     attachment: Attachment,
-    onClickRemove: (Attachment) -> Unit = {}
+    onClickRemove: (Attachment) -> Unit = {},
+    onClickOpen: (Attachment) -> Unit = {},
 ) {
-    ElevatedCard(modifier = modifier.fillMaxWidth()) {
+    ElevatedCard(modifier = modifier
+        .fillMaxWidth()
+        .clickable {
+            onClickOpen(attachment)
+        }) {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
@@ -112,5 +119,5 @@ private fun AttachmentItem(
 @Preview
 @Composable
 fun PreviewAttachmentTab() {
-    Attachments()
+//    Attachments()
 }

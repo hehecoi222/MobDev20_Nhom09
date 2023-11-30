@@ -31,6 +31,7 @@ enum class KindOfBottomSheet(val value: Int) {
             onAddAttachment: () -> Unit,
             onclickBackup: () -> Unit,
             onClickSync: () -> Unit,
+            onClickOpen: (Attachment) -> Unit,
             onClickNotification: () -> Unit = {}
         ) {
             when (kindOfBottomSheet) {
@@ -50,7 +51,8 @@ enum class KindOfBottomSheet(val value: Int) {
                 AttachmentTab -> Attachments(
                     attachments = attachmentList,
                     onClickRemove = onDeleteAttachment,
-                    onClickAdd = onAddAttachment
+                    onClickAdd = onAddAttachment,
+                    onClickOpen = onClickOpen,
                 )
 
                 else -> {}

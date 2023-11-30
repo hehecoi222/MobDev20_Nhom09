@@ -94,5 +94,10 @@ class NoteJson {
             fileSpilt.add(1, addition)
             return fileSpilt.joinToString(".")
         }
+
+        fun getLast(filepath: String): String {
+            val fileLast = filepath.split(".")
+            return fileLast.subList(0, fileLast.size - 1).joinToString(".")
+        }
     }
 }
