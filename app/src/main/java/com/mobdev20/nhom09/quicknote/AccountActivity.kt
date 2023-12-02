@@ -111,6 +111,7 @@ class AccountActivity : AppCompatActivity() {
                             if (accountViewModel.isSignIn.value) {
                                 Firebase.auth.signOut()
                                 accountViewModel.signOut()
+                                googleSignInClient.revokeAccess()
                             } else {
                                 Toast.makeText(context, "You need an account for this", Toast.LENGTH_SHORT).show()
                             }
