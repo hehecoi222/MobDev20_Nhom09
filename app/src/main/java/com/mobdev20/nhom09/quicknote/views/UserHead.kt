@@ -3,6 +3,7 @@ package com.mobdev20.nhom09.quicknote.views
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +24,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.toColor
+import com.google.android.material.color.MaterialColors
 import com.mobdev20.nhom09.quicknote.R
+import com.mobdev20.nhom09.quicknote.helpers.ColorsGentor
 import com.mobdev20.nhom09.quicknote.ui.theme.toHslColor
 
 @Composable
@@ -34,15 +38,16 @@ fun UserHead(
     size: Dp = 40.dp,
     textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
 ) {
+    val darkTheme = isSystemInDarkTheme()
     Box(modifier.size(size), contentAlignment = Alignment.Center) {
         val color = remember(id, username) {
             Color("$id / $username".toHslColor())
         }
         val initials = (username.replace(" ","").take(2)).uppercase()
         Canvas(modifier = Modifier.fillMaxSize()) {
-            drawCircle(SolidColor(color))
+            drawCircle(SolidColor(Color(ColorsGentor(color, darkTheme).primaryPalette.tone(90))))
         }
-        Text(text = initials, style = textStyle, color = Color.White)
+        Text(text = initials, style = textStyle, color = Color(ColorsGentor(color, isSystemInDarkTheme()).primaryPalette.tone(10)))
     }
 }
 
@@ -63,7 +68,7 @@ fun UserInfo(modifier: Modifier = Modifier, id: String, username: String, visibl
 @Preview
 @Composable
 fun UserHeadPreview() {
-    UserHead(id = "15", username = "Hi Username", size = 60.dp,)
+    UserHead(id = "19", username = "Hi Username", size = 60.dp,)
 }
 
 @Preview

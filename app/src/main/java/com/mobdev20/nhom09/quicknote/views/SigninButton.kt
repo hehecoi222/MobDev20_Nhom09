@@ -98,5 +98,5 @@ fun SignInButton(
 @Preview
 @Composable
 fun SignInButtonPreview() {
-    SignInButton(visible = false)
+    SignInButton(visible = true)
 }
