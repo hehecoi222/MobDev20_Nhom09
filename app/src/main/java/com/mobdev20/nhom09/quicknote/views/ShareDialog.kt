@@ -19,6 +19,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -42,7 +43,9 @@ fun ShareDialog(
     usersRead: SnapshotStateList<UserState>,
     usersEdit: SnapshotStateList<UserState>,
     onClickEdit: (UserState) -> Unit,
-    onClickRemove: (UserState) -> Unit
+    onClickRemove: (UserState) -> Unit,
+    onCopyLink: () -> Unit,
+    onCloseButton: () -> Unit,
 ) {
     val value = remember {
         mutableStateOf("")
@@ -50,7 +53,12 @@ fun ShareDialog(
     AlertDialog(onDismissRequest = {
 
     }, confirmButton = {
-
+        TextButton(onClick = onCopyLink) {
+            Text(text = "Copy link")
+        }
+        TextButton(onClick = onCloseButton) {
+            Text(text = "Close")
+        }
     }, modifier = modifier, dismissButton = {
 
     }, title = {

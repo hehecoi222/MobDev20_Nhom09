@@ -43,6 +43,10 @@ class FirebaseImpl @Inject constructor() : FirebaseNote {
                 userId = (docs.data?.get("user")).toString(),
                 title = (docs.data?.get("title")).toString(),
                 content = (docs.data?.get("content")).toString(),
+                timeUpdate = Instant.ofEpochSecond(
+                    (docs.data?.get("timeUpdate") as Map<*, *>).get("epochSecond").toString().toLong(),
+                    (docs.data?.get("timeUpdate") as Map<*, *>).get("nano").toString().toLong()
+                ),
                 timeRestore = Instant.now(),
                 history = ((docs.data?.get("history")) as List<Map<*, *>>).map {
                     NoteHistory(
@@ -50,7 +54,11 @@ class FirebaseImpl @Inject constructor() : FirebaseNote {
                         contentNew = it.get("contentNew").toString(),
                         line = it.get("line").toString().toInt(),
                         type = HistoryType.valueOf(it.get("type").toString()),
-                        userId = it.get("userId").toString()
+                        userId = it.get("userId").toString(),
+                        timestamp = Instant.ofEpochSecond(
+                            (docs.data?.get("timestamp") as Map<*, *>).get("epochSecond").toString().toLong(),
+                            (docs.data?.get("timestamp") as Map<*, *>).get("nano").toString().toLong()
+                        )
                     )
                 }.toMutableList(),
                 attachments = ((docs.data?.get("attachments")) as List<String>).toMutableList()

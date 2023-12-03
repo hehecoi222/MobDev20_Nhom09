@@ -66,7 +66,7 @@ class NoteJson {
                             )
                         } ?: HistoryType.EDIT,
                         contentOld = Encoder.decode(it.jsonObject["contentOld"]?.jsonPrimitive?.content.toString()),
-                        contentNew = Encoder.decode(it.jsonObject["timeStamp"]?.jsonPrimitive?.content.toString()))
+                        contentNew = Encoder.decode(it.jsonObject["contentNew"]?.jsonPrimitive?.content.toString()))
                 }?.toMutableList() ?: mutableListOf()
             )
         }
