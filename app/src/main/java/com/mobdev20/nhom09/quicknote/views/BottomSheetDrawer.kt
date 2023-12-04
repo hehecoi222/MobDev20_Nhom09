@@ -32,9 +32,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,20 +48,29 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mobdev20.nhom09.quicknote.R
+import com.mobdev20.nhom09.quicknote.state.Attachment
+import com.mobdev20.nhom09.quicknote.state.NoteOverview
 
 @Composable
 fun BottomSheetDrawer(
     isKeyboardActive: MutableState<Boolean>,
     kindOfBottomSheet: MutableState<KindOfBottomSheet>,
-    expanded: MutableState<Boolean>
+    expanded: MutableState<Boolean>,
+    noteList: SnapshotStateList<NoteOverview> = mutableStateListOf(),
+    onClickNote: (String) -> Unit = {},
+    onDeleteNote: () -> Unit = {},
+    onExpandNote: () -> Unit = {},
+    onClickAttachment: () -> Unit = {},
+    attachmentList: SnapshotStateList<Attachment> = mutableStateListOf(),
+    onDeleteAttachment: (Attachment) -> Unit = {},
+    onClickBackup: () -> Unit = {},
+    onClickSync: () -> Unit = {},
+    onClickBold: () -> Unit = {},
+    onClickItalic: () -> Unit = {},
+    onClickUnderline: () -> Unit = {},
+    onClickOpen: (Attachment) -> Unit,
+    onClickNotification: () -> Unit = {}
 ) {
-    val color = remember {
-        mutableStateOf(Color(0))
-    }
-    val colorOnce = remember {
-        mutableStateOf(false)
-    }
-    val scope = rememberCoroutineScope()
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -81,18 +93,41 @@ fun BottomSheetDrawer(
                 BottomSheet(
                     isKeyboardActive = isKeyboardActive.value,
                     kindOfBottomSheet = kindOfBottomSheet,
-                    expanded = expanded
+                    expanded = expanded,
+                    onExpandNote = onExpandNote
                 ) {
-                    KindOfBottomSheet.GetContent(kindOfBottomSheet = kindOfBottomSheet.value)
+                    KindOfBottomSheet.GetContent(
+                        kindOfBottomSheet = kindOfBottomSheet.value,
+                        oldNoteListState = noteList,
+                        onClickNote = onClickNote,
+                        onClickDelete = onDeleteNote,
+                        onClickAttachment = {
+                            kindOfBottomSheet.value = KindOfBottomSheet.AttachmentTab
+                        },
+                        attachmentList = attachmentList,
+                        onAddAttachment = onClickAttachment,
+                        onDeleteAttachment = onDeleteAttachment,
+                        onclickBackup = onClickBackup,
+                        onClickSync = onClickSync,
+                        onClickOpen = onClickOpen,
+                    )
                 }
-                FormatBar(kindOfBottomSheet = kindOfBottomSheet)
+                FormatBar(
+                    kindOfBottomSheet = kindOfBottomSheet,
+                    onClickUnderline = onClickUnderline,
+                    onClickItalic = onClickItalic,
+                    onClickBold = onClickBold
+                )
             }
         }
     }
 }
 
 @Composable
-fun FormatBar(modifier: Modifier = Modifier, kindOfBottomSheet: MutableState<KindOfBottomSheet>) {
+fun FormatBar(
+    modifier: Modifier = Modifier, kindOfBottomSheet: MutableState<KindOfBottomSheet>,
+    onClickBold: () -> Unit, onClickItalic: () -> Unit, onClickUnderline: () -> Unit
+) {
     AnimatedVisibility(
         visible = kindOfBottomSheet.value == KindOfBottomSheet.FormatBar,
         enter = fadeIn() + slideInVertically(initialOffsetY = { full -> full }),
@@ -105,48 +140,48 @@ fun FormatBar(modifier: Modifier = Modifier, kindOfBottomSheet: MutableState<Kin
             color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
         ) {
             Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { }, modifier = Modifier.padding(start = 12.dp)) {
+                IconButton(onClick = onClickBold, modifier = Modifier.padding(start = 12.dp)) {
                     Icon(
                         painter = painterResource(id = R.drawable.baseline_format_bold_24),
                         contentDescription = null, // TODO: Add string description
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                IconButton(onClick = { }) {
+                IconButton(onClick = onClickItalic) {
                     Icon(
                         painter = painterResource(id = R.drawable.baseline_format_italic_24),
                         contentDescription = null, // TODO: Add string description,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                IconButton(onClick = { }) {
+                IconButton(onClick = onClickUnderline) {
                     Icon(
                         painter = painterResource(id = R.drawable.baseline_format_underlined_24),
                         contentDescription = null, // TODO: Add string description,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                IconButton(onClick = { }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.baseline_format_color_fill_24),
-                        contentDescription = null, // TODO: Add string description,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Divider(
-                    modifier = Modifier
-                        .padding(horizontal = 8.dp)
-                        .fillMaxHeight(.5f)
-                        .width(2.dp),
-                    color = MaterialTheme.colorScheme.outline
-                )
-                IconButton(onClick = { }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.outline_check_box_24),
-                        contentDescription = null, // TODO: Add string description,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+//                IconButton(onClick = { }) {
+//                    Icon(
+//                        painter = painterResource(id = R.drawable.baseline_format_color_fill_24),
+//                        contentDescription = null, // TODO: Add string description,
+//                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+//                    )
+//                }
+//                Divider(
+//                    modifier = Modifier
+//                        .padding(horizontal = 8.dp)
+//                        .fillMaxHeight(.5f)
+//                        .width(2.dp),
+//                    color = MaterialTheme.colorScheme.outline
+//                )
+//                IconButton(onClick = { }) {
+//                    Icon(
+//                        painter = painterResource(id = R.drawable.outline_check_box_24),
+//                        contentDescription = null, // TODO: Add string description,
+//                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+//                    )
+//                }
             }
         }
     }
@@ -158,7 +193,8 @@ fun BottomSheet(
     isKeyboardActive: Boolean = false,
     kindOfBottomSheet: MutableState<KindOfBottomSheet>,
     expanded: MutableState<Boolean>,
-    content: @Composable ColumnScope.() -> Unit = {}
+    onExpandNote: () -> Unit = {},
+    content: @Composable ColumnScope.() -> Unit = {},
 ) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
@@ -174,7 +210,12 @@ fun BottomSheet(
 
         KindOfBottomSheet.MoreOpts -> {
             expanded.value = true
-            180.dp
+            screenHeight / 4
+        }
+
+        KindOfBottomSheet.AttachmentTab -> {
+            expanded.value = true
+            screenHeight / 2
         }
 
         else -> {
@@ -207,6 +248,7 @@ fun BottomSheet(
                         indication = null, interactionSource = interactionSource
                     ) {
                         kindOfBottomSheet.value = KindOfBottomSheet.OldNotes
+                        onExpandNote()
                         expanded.value = !expanded.value
                     }
                     .fillMaxWidth()
@@ -228,7 +270,8 @@ fun BottomSheet(
                         color = MaterialTheme.colorScheme.surfaceVariant
                     ) {}
                 }
-                AnimatedVisibility(visible = expanded.value,
+                AnimatedVisibility(
+                    visible = expanded.value,
                     modifier = Modifier.fillMaxSize(),
                     enter = fadeIn() + slideInVertically(initialOffsetY = { full -> full }),
                     exit = fadeOut() + slideOutVertically(targetOffsetY = { fullHeight -> fullHeight })
@@ -243,11 +286,10 @@ fun BottomSheet(
 @Preview
 @Composable
 fun BottomSheetDrawerPreview() {
-//    BottomSheetDrawer()
-}
-
-@Preview
-@Composable
-fun BottomSheetPreview() {
-//    BottomSheet()
+//    BottomSheetDrawer(
+//        expanded = mutableStateOf(false),
+//        isKeyboardActive = mutableStateOf(false),
+//        kindOfBottomSheet = mutableStateOf(KindOfBottomSheet.FormatBar),
+//        settings =
+//    )
 }

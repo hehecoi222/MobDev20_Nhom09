@@ -1,11 +1,14 @@
 package com.mobdev20.nhom09.quicknote
 
+import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
+import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -13,17 +16,27 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.addCallback
+import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.color.DynamicColors
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import com.mobdev20.nhom09.quicknote.databinding.ActivityMainBinding
+import com.mobdev20.nhom09.quicknote.datasources.ChooseAttachment
+import com.mobdev20.nhom09.quicknote.datasources.StorageDatasource
+import com.mobdev20.nhom09.quicknote.helpers.NoteJson
+import com.mobdev20.nhom09.quicknote.helpers.TextProcessor
 import com.mobdev20.nhom09.quicknote.ui.theme.MainAppTheme
 import com.mobdev20.nhom09.quicknote.viewmodels.EditorViewModel
 import com.mobdev20.nhom09.quicknote.views.BottomSheetDrawer
@@ -32,91 +45,192 @@ import com.mobdev20.nhom09.quicknote.views.KindOfBottomSheet
 import com.mobdev20.nhom09.quicknote.views.NoteTitleTextField
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
+class MainActivity() : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var darkMode = false
 
     @Inject
     lateinit var editorViewModel: EditorViewModel
 
+    @Inject
+    lateinit var storageDatasource: StorageDatasource
+
+    lateinit var getContent : ActivityResultLauncher<Unit>
+
+    private lateinit var auth: FirebaseAuth
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Set theme ứng dụng
         setTheme(
             if (DynamicColors.isDynamicColorAvailable()) R.style.Theme_QuickNote_Dynamic
             else if ((resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES) R.style.Theme_QuickNote_Dark
             else R.style.Theme_QuickNote
         )
 
+        // onCreate ban đầu
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
-
         val view = binding.root
+
+        auth = Firebase.auth
+
+        // khởi tạo các giá trị UI
+        val noteContent = binding.noteBody
         val offset = mutableStateOf(false)
         val isKeyboardActive = mutableStateOf(false)
         val kindOfBottomSheet = mutableStateOf(KindOfBottomSheet.OldNotes)
         val expanded = mutableStateOf(false)
         val isScrolling = mutableStateOf(false)
+        getContent = activityResultRegistry.register("attachment", ChooseAttachment(this.applicationContext, storageDatasource)) {
+            if (it != null) {
+                editorViewModel.addAttachment(it as File)
+            }
+        }
 
+        // Nạp Compose TopBar vào
         binding.topAppBar.apply {
             setContent {
                 MainAppTheme {
                     darkMode = isSystemInDarkTheme()
-                    CustomTopAppBar(modifier = Modifier.fillMaxWidth(),
+                    CustomTopAppBar(
+                        modifier = Modifier.fillMaxWidth(),
                         offset = offset,
-                        onClickFormat = { // TODO: This is how Format text work, move it to ViewModel
-//                            val start = noteBody.selectionStart
-//                            val end = noteBody.selectionEnd
-//                            if (start != end) {
-//                                var exist = false
-//                                noteBody.text.getSpans(start, end, StyleSpan::class.java)?.forEach {
-//                                    val style = it.style
-//                                    if (style == Typeface.BOLD) {
-//                                        noteBody.text.removeSpan(it)
-//                                        exist = true
-//                                    }
-//                                }
-//
-//                                if (!exist) {
-//                                    noteBody.text.setSpan(
-//                                        StyleSpan(Typeface.BOLD),
-//                                        start,
-//                                        end,
-//                                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-//                                    )
-//                                }
-//                            }
-                            if (kindOfBottomSheet.value == KindOfBottomSheet.FormatBar)
+                        onClickFormat = { // Mở bảng format
+                            if (kindOfBottomSheet.value == KindOfBottomSheet.FormatBar) {
                                 kindOfBottomSheet.value = KindOfBottomSheet.OldNotes
-                            else
+                                val params =
+                                    binding.noteContainer.layoutParams as ViewGroup.MarginLayoutParams
+                                params.bottomMargin = TypedValue.applyDimension(
+                                    TypedValue.COMPLEX_UNIT_DIP,
+                                    20f,
+                                    resources.displayMetrics
+                                ).toInt()
+                                binding.noteContainer.layoutParams = params
+                            } else {
                                 kindOfBottomSheet.value = KindOfBottomSheet.FormatBar
+                                val params =
+                                    binding.noteContainer.layoutParams as ViewGroup.MarginLayoutParams
+                                params.bottomMargin = TypedValue.applyDimension(
+                                    TypedValue.COMPLEX_UNIT_DIP,
+                                    64f,
+                                    resources.displayMetrics
+                                ).toInt()
+                                binding.noteContainer.layoutParams = params
+                            }
                         },
-                        onClickMore = {
+                        onClickMore = { // Mở bảng thêm
                             (this@MainActivity.getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
                                 ?.hideSoftInputFromWindow(view.windowToken, 0)
                             if (kindOfBottomSheet.value == KindOfBottomSheet.MoreOpts)
                                 kindOfBottomSheet.value = KindOfBottomSheet.OldNotes
                             else
                                 kindOfBottomSheet.value = KindOfBottomSheet.MoreOpts
-                        })
+                        },
+                        onClickUndo = {
+                            editorViewModel.reverseHistory()
+                        },
+                        onClickRedo = { editorViewModel.replayHistory(editorViewModel.redoHistory.removeLast()) },
+                        redoEnable = editorViewModel.redoEnabled,
+                        onClickAccount = {
+                            startActivity(Intent(context, AccountActivity::class.java))
+                        }
+                    )
                 }
             }
         }
 
+        // Nạp Compose bottomSheet
         binding.bottomSheetDrawer.apply {
             setContent {
                 MainAppTheme {
                     BottomSheetDrawer(
                         isKeyboardActive = isKeyboardActive,
                         kindOfBottomSheet = kindOfBottomSheet,
-                        expanded = expanded
+                        expanded = expanded,
+                        noteList = editorViewModel.noteList,
+                        onDeleteNote = {
+                            editorViewModel.deleteNote()
+                        },
+                        onExpandNote = {
+                            editorViewModel.loadNoteList()
+                        },
+                        onClickNote = {
+                            editorViewModel.selectNoteToLoad(it)
+                            expanded.value = false
+                            noteContent.requestFocus()
+                        },
+                        onClickAttachment = {
+                            getContent.launch(Unit)
+                        },
+                        attachmentList = editorViewModel.currentAttachment,
+                        onDeleteAttachment = {
+                            editorViewModel.deleteAttachment(it)
+                        },
+                        onClickBackup = {
+                            editorViewModel.backupNote()
+                        },
+                        onClickSync = {
+                            editorViewModel.restoreNote()
+                        },
+                        onClickBold = {
+                            val noteContent = binding.noteBody
+                            val string = TextProcessor.setFormat(noteContent, Typeface.BOLD)
+                            val spannable = TextProcessor.convertFormat(string)
+//                            noteContent.setText(spannable)
+//                            noteContent.setSelection(noteContent.text.length)
+                            TextProcessor.renderFormat(noteContent, Typeface.BOLD)
+                        },
+                        onClickItalic = {
+                            val noteContent = binding.noteBody
+                            val string = TextProcessor.setFormat(noteContent, Typeface.ITALIC)
+                            val spannable = TextProcessor.convertFormat(string)
+//                            noteContent.setText(spannable)
+//                            noteContent.setSelection(noteContent.text.length)
+                            TextProcessor.renderFormat(noteContent, Typeface.ITALIC)
+                        },
+                        onClickUnderline = {
+                            val noteContent = binding.noteBody
+                            val string = TextProcessor.setFormat(noteContent, 3)
+                            val spannable = TextProcessor.convertFormat(string)
+//                            noteContent.setText(spannable)
+//                            noteContent.setSelection(noteContent.text.length)
+                            TextProcessor.renderFormat(noteContent, 3)
+                        },
+                        onClickOpen = {
+                            val file = File(NoteJson.getLast(it.filepath))
+
+                            // Get URI and MIME type of file
+                            Log.d("FILE_TAG", application.packageName + ".provider" + file)
+
+                            // Get URI and MIME type of file
+                            val uri: Uri? = try {
+                                FileProvider.getUriForFile(
+                                    context,
+                                    applicationContext.packageName + ".fileprovider",
+                                    file)
+                            } catch (e: IllegalArgumentException) {
+                                Log.e("File Selector",
+                                    "The selected file can't be shared: $file")
+                                null
+                            }
+                            val mime = contentResolver.getType(uri!!)
+                            val intent = Intent()
+                            intent.action = Intent.ACTION_VIEW
+                            intent.setDataAndType(uri, mime)
+                            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            startActivity(intent)
+                        }
                     )
                 }
             }
         }
 
+        // Nạp Compose NoteTitleTextField
         binding.noteTitleCompose.apply {
             setContent {
                 MainAppTheme {
@@ -124,14 +238,27 @@ class MainActivity : AppCompatActivity() {
                         value = editorViewModel.noteState.collectAsState().value.title,
                         onValueChange = {
                             editorViewModel.editTitle(it)
+                        }, noteList = editorViewModel.noteList.toList(),
+                        createNote = {
                             editorViewModel.saveNoteAfterDelay()
-                        }) {
+                            noteContent.requestFocus()
+                        },
+                        onSelectNote = {
+                            editorViewModel.selectNoteToLoad(it)
+                            noteContent.requestFocus()
+                        },
+                        clearState = {
+                            editorViewModel.clearState()
+                        },
+                        isClearAvailable = editorViewModel.noteState.collectAsState().value.id.isNotEmpty()
+                    ) {
                         binding.noteBody.requestFocus()
                     }
                 }
             }
         }
 
+        // Listener cái soft có hiện không
         view.viewTreeObserver.addOnGlobalLayoutListener {
             val r = Rect()
             view.getWindowVisibleDisplayFrame(r)
@@ -142,60 +269,44 @@ class MainActivity : AppCompatActivity() {
                 resources.displayMetrics
             ).toInt()
             isKeyboardActive.value = heightDiff > typed
-            if (isKeyboardActive.value && kindOfBottomSheet.value != KindOfBottomSheet.FormatBar) kindOfBottomSheet.value =
-                KindOfBottomSheet.OldNotes
+
+            // Logic ẩn hiện bottom và padding content
+            if (isKeyboardActive.value && kindOfBottomSheet.value == KindOfBottomSheet.OldNotes) {
+                kindOfBottomSheet.value = KindOfBottomSheet.OldNotes
+                val params = binding.noteContainer.layoutParams as ViewGroup.MarginLayoutParams
+                params.bottomMargin = TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP,
+                    20f,
+                    resources.displayMetrics
+                ).toInt()
+                binding.noteContainer.layoutParams = params
+            } else if (!isKeyboardActive.value) {
+                val params = binding.noteContainer.layoutParams as ViewGroup.MarginLayoutParams
+                params.bottomMargin = TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP,
+                    64f,
+                    resources.displayMetrics
+                ).toInt()
+                binding.noteContainer.layoutParams = params
+            }
         }
 
+        // Listener ẩn soft key khi người dùng vuốt lên
         binding.noteContainer.setOnScrollChangeListener { v, scrollX, scrollY, oldScrollX, oldScrollY ->
             run {
                 offset.value = scrollY > TypedValue.applyDimension(
                     TypedValue.COMPLEX_UNIT_DIP,
-                    10f,
+                    36f,
                     resources.displayMetrics
                 )
-                if (scrollY < oldScrollY - 10 && isScrolling.value) {
+                if (scrollY < oldScrollY - 36 && isScrolling.value) {
                     (this@MainActivity.getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
                         ?.hideSoftInputFromWindow(view.windowToken, 0)
                 }
             }
         }
-
-        val noteContent = binding.noteBody
-
-        noteContent.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-//                TODO("Not yet implemented")
-            }
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-            }
-
-            override fun afterTextChanged(s: Editable?) {
-//                TODO("Not yet implemented"), Implement text processor
-                editorViewModel.editBody(s.toString())
-                editorViewModel.saveNoteAfterDelay()
-            }
-        })
-
-        lifecycleScope.launch {
-            editorViewModel.noteState.collect {
-                if (!editorViewModel.load.value) {
-                    return@collect
-                }
-                var edit = it.content
-                if (edit != null && edit!!.isNotEmpty()) {
-                    editorViewModel.load.value = false
-                    noteContent.setText(edit)
-                } else if (edit.toString().isEmpty() && it.id.isEmpty()) {
-                    editorViewModel.load.value = false
-                    noteContent.setText("")
-                }
-            }
-        }
-
         noteContent.setOnTouchListener { view: View, motionEvent: MotionEvent ->
             run {
-                Log.d("ACTION", motionEvent.action.toString())
                 when (motionEvent.action) {
                     MotionEvent.ACTION_MOVE -> {
                         isScrolling.value = true
@@ -213,11 +324,73 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Listener khi text thay đổi
+        noteContent.addTextChangedListener(object : TextWatcher {
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+//                TODO("Not yet implemented")
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+//                TODO("Not yet implemented"), Implement text processor in helpers
+                val stringAfterProcessed = if (s.isNullOrEmpty()) "" else s.toString()
+                if (editorViewModel.currentReverseHistory.value != null) {
+                    editorViewModel.currentReverseHistory.value = null
+                    return
+                }
+                if (editorViewModel.noteState.value.id.isEmpty()) return
+                editorViewModel.editBody(stringAfterProcessed, noteContent.selectionEnd)
+            }
+        })
+
+        // Handle thoát ứng dụng
         this.onBackPressedDispatcher.addCallback {
             if (expanded.value == true) expanded.value = false
             else finish()
         }
 
+        // ViewModel launch cập nhật giá trị
+        lifecycleScope.launch {
+            editorViewModel.noteState.collect {
+                if (!editorViewModel.load.value) {
+                    return@collect
+                }
+                val edit = it.content
+                if (editorViewModel.currentReverseHistory.value != null) {
+                    editorViewModel.load.value = false
+                    val cursor =
+                        if (noteContent.selectionEnd > edit.length) edit.length else noteContent.selectionEnd
+                    noteContent.setText(edit)
+                    noteContent.setSelection(cursor)
+                    return@collect
+                }
+                if (edit.isNotEmpty()) {
+                    editorViewModel.load.value = false
+                    val cursor =
+                        if (noteContent.selectionEnd > edit.length) edit.length else noteContent.selectionEnd
+                    noteContent.setText(edit)
+                    noteContent.setSelection(cursor)
+                } else if (edit.isEmpty() && it.id.isEmpty()) {
+                    editorViewModel.load.value = false
+                    noteContent.setText("")
+                }
+            }
+        }
+
         setContentView(view)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        editorViewModel.updateUser(auth = auth)
+        editorViewModel.loadNoteList()
+    }
+
+    override fun onDestroy() {
+        getContent.unregister()
+        super.onDestroy()
     }
 }

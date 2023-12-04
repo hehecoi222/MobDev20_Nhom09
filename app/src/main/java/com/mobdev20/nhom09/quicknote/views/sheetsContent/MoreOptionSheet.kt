@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,33 +26,42 @@ import androidx.compose.ui.unit.dp
 import com.mobdev20.nhom09.quicknote.R
 
 @Composable
-fun MoreOptionSheet(modifier: Modifier = Modifier) {
+fun MoreOptionSheet(modifier: Modifier = Modifier,
+                    onClickDelete: () -> Unit,
+                    onClickAttachments: () -> Unit,
+                    onClickBackup: () -> Unit,
+                    onClickSync: () -> Unit
+                    ) {
     Row(modifier = modifier, horizontalArrangement = Arrangement.SpaceAround) {
         MoreOption(
             icon = R.drawable.outline_cloud_upload_24,
             value = R.string.more_opt_label_backup,
-            visible = true
+            visible = true,
+            onClick = onClickBackup
         )
         MoreOption(
             icon = R.drawable.outline_delete_24,
             value = R.string.more_opt_label_delete,
-            visible = true
+            visible = true,
+            onClick = onClickDelete
         )
         MoreOption(
-            icon = R.drawable.outline_share_24,
-            value = R.string.more_opt_label_share,
-            visible = true
+            icon = R.drawable.outline_cloud_sync_24,
+            value = R.string.sync_btn,
+            visible = true,
+            onClick = onClickSync
         )
         MoreOption(
             icon = R.drawable.outline_attach_file_24,
             value = R.string.more_opt_label_attach,
-            visible = true
+            visible = true,
+            onClick = onClickAttachments
         )
-        MoreOption(
-            icon = R.drawable.outline_notification_add_24,
-            value = R.string.more_opt_label_noti_add,
-            visible = true
-        )
+//        MoreOption(
+//            icon = R.drawable.outline_notification_add_24,
+//            value = R.string.more_opt_label_noti_add,
+//            visible = true
+//        )
     }
 }
 
@@ -64,11 +74,11 @@ private fun MoreOption(
 ) {
     AnimatedVisibility(visible = visible) {
         Column(
-            verticalArrangement = Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .padding(5.dp)
-                .height(68.dp)
+                .wrapContentHeight()
                 .clickable(onClick = onClick)
         ) {
             Icon(
@@ -77,6 +87,7 @@ private fun MoreOption(
                 modifier = Modifier.size(28.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Spacer(modifier = Modifier.padding(4.dp))
             Text(
                 text = stringResource(id = value),
                 style = MaterialTheme.typography.labelSmall,

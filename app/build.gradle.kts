@@ -39,6 +39,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "1.8"
@@ -64,15 +65,18 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.hilt.android)
     implementation(platform("com.google.firebase:firebase-bom:32.6.0"))
-    implementation("androidx.activity:activity-ktx:1.8.1")
-    // https://mvnrepository.com/artifact/net.lingala.zip4j/zip4j
-    implementation("net.lingala.zip4j:zip4j:2.11.5")
-
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-auth")
+    implementation(libs.play.services.auth)
+    implementation(libs.zip4j)
+    implementation(libs.androidx.activity.ktx)
+    implementation(libs.androidx.work.runtime.ktx)
 
     kapt(libs.hilt.android.compiler)
     kapt(libs.kotlinx.metadata.jvm)
     implementation(libs.androidx.datastore.preferences)
-    debugImplementation(libs.ui.tooling.preview)
+    debugImplementation(libs.ui.tooling)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)

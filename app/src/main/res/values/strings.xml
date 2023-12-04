@@ -6,4 +6,9 @@
     <string name="more_opt_label_attach">Attachments</string>
     <string name="more_opt_label_noti_add">Add Notification</string>
     <string name="more_opt_label_noti_edit">Edit Notification</string>
+    <string name="signin_btn">Sign In with Google</string>
+    <string name="signout_btn">Sign Out</string>
+    <string name="copy_uid_btn">Copy User ID</string>
+    <string name="user_id">User ID:</string>
+    <string name="sync_btn">Sync with Cloud</string>
 </resources>

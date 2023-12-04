@@ -1,36 +1,31 @@
 package com.mobdev20.nhom09.quicknote
 
-import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MotionEvent
-import android.view.View
 import android.widget.Button
 import android.widget.ImageView
-import android.widget.Toast
-import com.mobdev20.nhom09.quicknote.databinding.ActivityMainBinding
-import com.mobdev20.nhom09.quicknote.helpers.Uuid
-import com.mobdev20.nhom09.quicknote.viewmodels.EditorDrawModel
-import com.mobdev20.nhom09.quicknote.viewmodels.EditorViewModel
+import androidx.appcompat.app.AppCompatActivity
+import com.mobdev20.nhom09.quicknote.databinding.ActivityDrawBinding
+import com.mobdev20.nhom09.quicknote.datasources.StorageDatasource
 import dagger.hilt.android.AndroidEntryPoint
-import java.io.File
-import java.io.FileOutputStream
+import java.io.ByteArrayOutputStream
 import javax.inject.Inject
+
 
 @AndroidEntryPoint
 class DrawActivity : AppCompatActivity() {
 
     @Inject
-    lateinit var editorDrawModel: EditorDrawModel
+    lateinit var storageDatasource: StorageDatasource
 
+    private lateinit var imageView: ImageView
 
-    private lateinit var imageView : ImageView
-
-    private lateinit var button : Button
+    private lateinit var button: Button
 
     private var bitmap: Bitmap? = null
     private var canvas: Canvas? = null
@@ -40,7 +35,7 @@ class DrawActivity : AppCompatActivity() {
     private var floatEndX = -1f
     private var floatEndY = -1f
 
-    private lateinit var binding: ActivityMainBinding
+    private lateinit var binding: ActivityDrawBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -50,13 +45,13 @@ class DrawActivity : AppCompatActivity() {
         imageView = findViewById(R.id.imageView)
         button = findViewById(R.id.button)
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
+        binding = ActivityDrawBinding.inflate(layoutInflater)
 
         val view = binding.root
 
 //        editorDrawModel = EditorDrawModel(view.context)
 
-        button.setOnClickListener{
+        button.setOnClickListener {
             bitmap?.let { it1 -> clickSave(it1) }
         }
     }
@@ -106,7 +101,14 @@ class DrawActivity : AppCompatActivity() {
     }
 
     fun clickSave(bitmap: Bitmap) {
-        editorDrawModel.saveAsBitmap(bitmap)
-    }
+        val intent = Intent()
+        val stream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+        val byteArray = stream.toByteArray()
+        intent.putExtra("data", byteArray)
+        intent.putExtra("internal", true)
+        setResult(RESULT_OK, intent)
 
+        finish()
+    }
 }
