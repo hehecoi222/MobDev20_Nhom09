@@ -1,10 +1,12 @@
 package com.mobdev20.nhom09.quicknote
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -14,14 +16,17 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.color.DynamicColors
@@ -56,9 +61,21 @@ class MainActivity() : AppCompatActivity() {
     @Inject
     lateinit var storageDatasource: StorageDatasource
 
-    lateinit var getContent : ActivityResultLauncher<Unit>
+    lateinit var getContent: ActivityResultLauncher<Unit>
 
     private lateinit var auth: FirebaseAuth
+
+    // Declare the launcher at the top of your Activity/Fragment:
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            // FCM SDK (and your app) can post notifications.
+        } else {
+            // TODO: Inform user that that your app will not show notifications.
+            Toast.makeText(this, "You won't receive any notifications", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Set theme ứng dụng
@@ -72,8 +89,15 @@ class MainActivity() : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
-
         auth = Firebase.auth
+
+        // Check permissions
+        askNotificationPermission()
+
+        // Preload
+        val intent = this.intent
+        if (!intent?.getStringExtra("ID").isNullOrEmpty())
+            editorViewModel.selectNoteToLoad(intent?.getStringExtra("ID")!!)
 
         // khởi tạo các giá trị UI
         val noteContent = binding.noteBody
@@ -82,7 +106,10 @@ class MainActivity() : AppCompatActivity() {
         val kindOfBottomSheet = mutableStateOf(KindOfBottomSheet.OldNotes)
         val expanded = mutableStateOf(false)
         val isScrolling = mutableStateOf(false)
-        getContent = activityResultRegistry.register("attachment", ChooseAttachment(this.applicationContext, storageDatasource)) {
+        getContent = activityResultRegistry.register(
+            "attachment",
+            ChooseAttachment(this.applicationContext, storageDatasource)
+        ) {
             if (it != null) {
                 editorViewModel.addAttachment(it as File)
             }
@@ -208,10 +235,13 @@ class MainActivity() : AppCompatActivity() {
                                 FileProvider.getUriForFile(
                                     context,
                                     applicationContext.packageName + ".fileprovider",
-                                    file)
+                                    file
+                                )
                             } catch (e: IllegalArgumentException) {
-                                Log.e("File Selector",
-                                    "The selected file can't be shared: $file")
+                                Log.e(
+                                    "File Selector",
+                                    "The selected file can't be shared: $file"
+                                )
                                 null
                             }
                             val mime = contentResolver.getType(uri!!)
@@ -220,7 +250,22 @@ class MainActivity() : AppCompatActivity() {
                             intent.setDataAndType(uri, mime)
                             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             startActivity(intent)
-                        }
+                        },
+                        isNotiOn = editorViewModel.noteState.collectAsState().value.notificationId.isNotEmpty(),
+                        onSetDate = { time ->
+                            editorViewModel.instant.value = time
+                        },
+                        onSetTime = { hourOfDay, minute ->
+                            editorViewModel.hourOfDay.value = hourOfDay
+                            editorViewModel.minute.value = minute
+                        },
+                        onSetRemove = {
+                            editorViewModel.deleteNotification()
+                        },
+                        onSetAdd = {
+                            editorViewModel.addNotification()
+                        },
+                        time = editorViewModel.combineInstant()
                     )
                 }
             }
@@ -236,7 +281,7 @@ class MainActivity() : AppCompatActivity() {
                             editorViewModel.editTitle(it)
                         }, noteList = editorViewModel.noteList.toList(),
                         createNote = {
-                            editorViewModel.saveNoteAfterDelay()
+                            editorViewModel.saveNoteNow()
                             noteContent.requestFocus()
                         },
                         onSelectNote = {
@@ -363,7 +408,7 @@ class MainActivity() : AppCompatActivity() {
                     noteContent.setSelection(cursor)
                     return@collect
                 }
-                if (edit.isNotEmpty()) {
+                if (edit.isNotEmpty() && noteContent.text.toString() != edit.toString()) {
                     editorViewModel.load.value = false
                     val cursor =
                         if (noteContent.selectionEnd > edit.length) edit.length else noteContent.selectionEnd
@@ -386,7 +431,35 @@ class MainActivity() : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        editorViewModel.clearState()
         getContent.unregister()
         super.onDestroy()
+    }
+
+    private fun askNotificationPermission() {
+        // This is only necessary for API level >= 33 (TIRAMISU)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) ==
+                PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.SCHEDULE_EXACT_ALARM
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                // FCM SDK (and your app) can post notifications.
+            } else if (shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS) && shouldShowRequestPermissionRationale(android.Manifest.permission.SCHEDULE_EXACT_ALARM)) {
+                // TODO: display an educational UI explaining to the user the features that will be enabled
+                //       by them granting the POST_NOTIFICATION permission. This UI should provide the user
+                //       "OK" and "No thanks" buttons. If the user selects "OK," directly request the permission.
+                //       If the user selects "No thanks," allow the user to continue without notifications.
+            } else {
+                // Directly ask for the permission
+                requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                requestPermissionLauncher.launch(android.Manifest.permission.SCHEDULE_EXACT_ALARM)
+            }
+        }
     }
 }

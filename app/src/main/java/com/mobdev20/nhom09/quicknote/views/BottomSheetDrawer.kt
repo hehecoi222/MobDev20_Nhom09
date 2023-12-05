@@ -15,16 +15,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,8 +33,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,7 +46,12 @@ import androidx.compose.ui.unit.dp
 import com.mobdev20.nhom09.quicknote.R
 import com.mobdev20.nhom09.quicknote.state.Attachment
 import com.mobdev20.nhom09.quicknote.state.NoteOverview
+import com.mobdev20.nhom09.quicknote.views.sheetsContent.CustomDatePicker
+import com.mobdev20.nhom09.quicknote.views.sheetsContent.CustomTimePicker
+import java.time.Instant
+import java.time.ZoneId
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BottomSheetDrawer(
     isKeyboardActive: MutableState<Boolean>,
@@ -69,8 +70,19 @@ fun BottomSheetDrawer(
     onClickItalic: () -> Unit = {},
     onClickUnderline: () -> Unit = {},
     onClickOpen: (Attachment) -> Unit,
-    onClickNotification: () -> Unit = {}
+    onSetDate: (Instant) -> Unit = { _ -> },
+    onSetTime: (Int, Int) -> Unit = { _, _ -> },
+    onSetRemove: () -> Unit = {},
+    onSetAdd: () -> Unit = {},
+    time: Instant = Instant.now(),
+    isNotiOn: Boolean = false,
 ) {
+    val isTimeShow = remember {
+        mutableStateOf(false)
+    }
+    val isDateShow = remember {
+        mutableStateOf(false)
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -110,6 +122,15 @@ fun BottomSheetDrawer(
                         onclickBackup = onClickBackup,
                         onClickSync = onClickSync,
                         onClickOpen = onClickOpen,
+                        time = time,
+                        onSetRemove = onSetRemove,
+                        onClickNoti = {
+                            kindOfBottomSheet.value = KindOfBottomSheet.NotiTab
+                        },
+                        isNotiOn = isNotiOn,
+                        isShowTime = isTimeShow,
+                        isShowDate = isDateShow,
+                        onSetAdd = onSetAdd,
                     )
                 }
                 FormatBar(
@@ -119,6 +140,20 @@ fun BottomSheetDrawer(
                     onClickBold = onClickBold
                 )
             }
+        }
+        if (isTimeShow.value) {
+            CustomTimePicker(
+                onSetTime = onSetTime,
+                isShowTime = isTimeShow,
+                hourOfDay = time.atZone(ZoneId.systemDefault()).hour,
+                minute = time.atZone(ZoneId.systemDefault()).minute
+            )
+        } else if (isDateShow.value) {
+            CustomDatePicker(
+                onSetDate = onSetDate,
+                isShowDate = isDateShow,
+                time = time
+            )
         }
     }
 }
@@ -210,12 +245,17 @@ fun BottomSheet(
 
         KindOfBottomSheet.MoreOpts -> {
             expanded.value = true
-            screenHeight / 4
+            screenHeight / 5
         }
 
         KindOfBottomSheet.AttachmentTab -> {
             expanded.value = true
             screenHeight / 2
+        }
+
+        KindOfBottomSheet.NotiTab -> {
+            expanded.value = true
+            screenHeight / 4
         }
 
         else -> {

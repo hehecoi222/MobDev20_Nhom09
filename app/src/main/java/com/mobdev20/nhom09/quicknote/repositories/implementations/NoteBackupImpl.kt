@@ -9,6 +9,7 @@ import com.mobdev20.nhom09.quicknote.datasources.NoteDataStore
 import com.mobdev20.nhom09.quicknote.datasources.SyncWorker
 import com.mobdev20.nhom09.quicknote.repositories.BackupNote
 import com.mobdev20.nhom09.quicknote.repositories.NoteSave
+import com.mobdev20.nhom09.quicknote.state.NoteState
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -39,12 +40,13 @@ class NoteBackupImpl @Inject constructor(@ApplicationContext private val context
         noteSave.loadNote(id).collect {
             if (it != null) {
                 firebaseNote.backup(it)
+                return@collect
             }
         }
     }
 
-    override suspend fun restore(id: String) {
-        firebaseNote.restore(id)
+    override suspend fun restore(id: String): NoteState? {
+        return firebaseNote.restore(id)
     }
 }
 

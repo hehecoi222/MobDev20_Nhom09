@@ -68,10 +68,13 @@ dependencies {
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-storage")
     implementation(libs.play.services.auth)
     implementation(libs.zip4j)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation("com.google.firebase:firebase-messaging")
+    implementation("com.google.firebase:firebase-analytics")
 
     kapt(libs.hilt.android.compiler)
     kapt(libs.kotlinx.metadata.jvm)
