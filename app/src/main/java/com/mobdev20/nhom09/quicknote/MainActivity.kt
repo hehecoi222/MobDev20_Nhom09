@@ -2,10 +2,6 @@ package com.mobdev20.nhom09.quicknote
 
 import android.content.Intent
 import android.content.res.Configuration
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.net.Uri
@@ -35,6 +31,7 @@ import com.google.firebase.ktx.Firebase
 import com.mobdev20.nhom09.quicknote.databinding.ActivityMainBinding
 import com.mobdev20.nhom09.quicknote.datasources.ChooseAttachment
 import com.mobdev20.nhom09.quicknote.datasources.StorageDatasource
+import com.mobdev20.nhom09.quicknote.helpers.EspressoIdlingResource
 import com.mobdev20.nhom09.quicknote.helpers.NoteJson
 import com.mobdev20.nhom09.quicknote.helpers.TextProcessor
 import com.mobdev20.nhom09.quicknote.ui.theme.MainAppTheme
@@ -63,6 +60,8 @@ class MainActivity() : AppCompatActivity() {
     lateinit var getContent : ActivityResultLauncher<Unit>
 
     private lateinit var auth: FirebaseAuth
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Set theme ứng dụng
@@ -352,32 +351,35 @@ class MainActivity() : AppCompatActivity() {
             else finish()
         }
 
-        // ViewModel launch cập nhật giá trị
-        lifecycleScope.launch {
-            editorViewModel.noteState.collect {
-                if (!editorViewModel.load.value) {
-                    return@collect
+            // ViewModel launch cập nhật giá trị
+            lifecycleScope.launch {
+                EspressoIdlingResource.increment()
+                editorViewModel.noteState.collect {
+                    if (!editorViewModel.load.value) {
+                        return@collect
+                    }
+                    val edit = it.content
+                    if (editorViewModel.currentReverseHistory.value != null) {
+                        editorViewModel.load.value = false
+                        val cursor =
+                            if (noteContent.selectionEnd > edit.length) edit.length else noteContent.selectionEnd
+                        noteContent.setText(edit)
+                        noteContent.setSelection(cursor)
+                        return@collect
+                    }
+                    if (edit.isNotEmpty()) {
+                        editorViewModel.load.value = false
+                        val cursor =
+                            if (noteContent.selectionEnd > edit.length) edit.length else noteContent.selectionEnd
+                        noteContent.setText(edit)
+                        noteContent.setSelection(cursor)
+                    } else if (edit.isEmpty() && it.id.isEmpty()) {
+                        editorViewModel.load.value = false
+                        noteContent.setText("")
+                    }
+
                 }
-                val edit = it.content
-                if (editorViewModel.currentReverseHistory.value != null) {
-                    editorViewModel.load.value = false
-                    val cursor =
-                        if (noteContent.selectionEnd > edit.length) edit.length else noteContent.selectionEnd
-                    noteContent.setText(edit)
-                    noteContent.setSelection(cursor)
-                    return@collect
-                }
-                if (edit.isNotEmpty()) {
-                    editorViewModel.load.value = false
-                    val cursor =
-                        if (noteContent.selectionEnd > edit.length) edit.length else noteContent.selectionEnd
-                    noteContent.setText(edit)
-                    noteContent.setSelection(cursor)
-                } else if (edit.isEmpty() && it.id.isEmpty()) {
-                    editorViewModel.load.value = false
-                    noteContent.setText("")
-                }
-            }
+                EspressoIdlingResource.decrement()
         }
 
         setContentView(view)

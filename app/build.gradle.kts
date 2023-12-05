@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.hilt.android)
     implementation(platform("com.google.firebase:firebase-bom:32.6.0"))
+    implementation(libs.androidx.espresso.idling.resource)
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     implementation("com.google.firebase:firebase-firestore")
@@ -74,6 +75,10 @@ dependencies {
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.work.runtime.ktx)
     testImplementation("org.robolectric:robolectric:4.11.1")
+
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
+    androidTestImplementation("androidx.test:runner:1.4.0")
+    androidTestImplementation("androidx.test:rules:1.4.0")
 
 
     kapt(libs.hilt.android.compiler)
