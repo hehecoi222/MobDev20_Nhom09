@@ -279,8 +279,6 @@ class TextProcessor {
             }
 
             return spannable.toString()
-
-
         }
 
         private fun hasStyleSpan(spannable: Spannable, start: Int, end: Int, style: Int): Boolean {

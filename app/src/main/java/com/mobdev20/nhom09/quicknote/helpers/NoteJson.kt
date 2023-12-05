@@ -57,7 +57,8 @@ class NoteJson {
                     it?.jsonPrimitive?.content ?: ""
                 }!!.toMutableList(),
                 history = model["history"]?.jsonArray?.map {
-                    NoteHistory(timestamp = Instant.parse(it.jsonObject["timestamp"]?.jsonPrimitive?.content),
+                    NoteHistory(
+                        timestamp = Instant.parse(it.jsonObject["timestamp"]?.jsonPrimitive?.content),
                         userId = it.jsonObject["userId"]?.jsonPrimitive?.content ?: "",
                         line = it.jsonObject["line"]?.jsonPrimitive?.int ?: 0,
                         type = it.jsonObject["type"]?.jsonPrimitive?.content?.let { it1 ->
@@ -66,7 +67,7 @@ class NoteJson {
                             )
                         } ?: HistoryType.EDIT,
                         contentOld = Encoder.decode(it.jsonObject["contentOld"]?.jsonPrimitive?.content.toString()),
-                        contentNew = Encoder.decode(it.jsonObject["timeStamp"]?.jsonPrimitive?.content.toString()))
+                        contentNew = Encoder.decode(it.jsonObject["contentNew"]?.jsonPrimitive?.content.toString()))
                 }?.toMutableList() ?: mutableListOf()
             )
         }
