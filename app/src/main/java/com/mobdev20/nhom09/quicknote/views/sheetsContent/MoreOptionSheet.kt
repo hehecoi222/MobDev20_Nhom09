@@ -32,6 +32,7 @@ fun MoreOptionSheet(modifier: Modifier = Modifier,
                     onClickBackup: () -> Unit,
                     onClickSync: () -> Unit,
                     onClickNoti: () -> Unit,
+                    onClickShare: () -> Unit,
                     isNotiOn: Boolean,
                     ) {
     Row(modifier = modifier, horizontalArrangement = Arrangement.SpaceAround) {
@@ -52,6 +53,12 @@ fun MoreOptionSheet(modifier: Modifier = Modifier,
             value = R.string.sync_btn,
             visible = true,
             onClick = onClickSync
+        )
+        MoreOption(
+            icon = R.drawable.outline_share_24,
+            value = R.string.more_opt_label_share,
+            visible = true,
+            onClick = onClickShare
         )
         MoreOption(
             icon = R.drawable.outline_attach_file_24,

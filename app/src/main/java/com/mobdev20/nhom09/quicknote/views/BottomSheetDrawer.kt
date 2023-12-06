@@ -74,6 +74,7 @@ fun BottomSheetDrawer(
     onSetTime: (Int, Int) -> Unit = { _, _ -> },
     onSetRemove: () -> Unit = {},
     onSetAdd: () -> Unit = {},
+    onClickShare: () -> Unit = {},
     time: Instant = Instant.now(),
     isNotiOn: Boolean = false,
 ) {
@@ -130,6 +131,7 @@ fun BottomSheetDrawer(
                         isNotiOn = isNotiOn,
                         isShowTime = isTimeShow,
                         isShowDate = isDateShow,
+                        onClickShare = onClickShare,
                         onSetAdd = onSetAdd,
                     )
                 }

@@ -39,6 +39,7 @@ enum class KindOfBottomSheet(val value: Int) {
             onClickNoti: () -> Unit,
             onSetRemove: () -> Unit,
             onSetAdd: () -> Unit,
+            onClickShare: () -> Unit,
             time: Instant,
             isNotiOn:Boolean,
             isShowTime: MutableState<Boolean>,
@@ -57,6 +58,7 @@ enum class KindOfBottomSheet(val value: Int) {
                     onClickBackup = onclickBackup,
                     onClickSync = onClickSync,
                     onClickNoti = onClickNoti,
+                    onClickShare = onClickShare,
                     isNotiOn = isNotiOn
                 )
 

@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mobdev20.nhom09.quicknote.R
@@ -46,6 +47,7 @@ fun ShareDialog(
     onClickRemove: (UserState) -> Unit,
     onCopyLink: () -> Unit,
     onCloseButton: () -> Unit,
+    onClickAdd: (String) -> Unit,
 ) {
     val value = remember {
         mutableStateOf("")
@@ -84,10 +86,13 @@ fun ShareDialog(
             }, label = {
                 Text(text = "User ID")
             }, trailingIcon = {
-                Icon(
-                    painter = painterResource(id = R.drawable.outline_add_circle_outline_24),
-                    contentDescription = "Add"
-                )
+                IconButton(onClick = { onClickAdd(value.value) }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.outline_add_circle_outline_24),
+                        contentDescription = "Add",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             })
             Spacer(modifier = Modifier.padding(8.dp))
             LazyListIds(
@@ -167,18 +172,18 @@ fun ListCards(
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp)
-            .padding(vertical = 8.dp, horizontal = 16.dp),
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(.6f)) {
             UserHead(
                 id = user.id,
                 username = user.username,
                 textStyle = MaterialTheme.typography.titleMedium
             )
             Spacer(modifier = Modifier.padding(8.dp))
-            Text(text = user.username, style = MaterialTheme.typography.bodyLarge)
+            Text(text = user.username, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (isOwner) {
@@ -222,7 +227,22 @@ fun ListCards(
 @Preview
 @Composable
 fun ShareDialogPreview() {
-//    ShareDialog()
+    ShareDialog(
+        modifier = Modifier,
+        owner = UserState(
+            id = "123",
+            username = "JohnDoe"
+        ),
+        usersRead = mutableStateListOf(
+            UserState(username = "JohnDoe Long names")
+        ),
+        usersEdit = mutableStateListOf(),
+        onClickEdit = {},
+        onClickRemove = {},
+        onCopyLink = {},
+        onCloseButton = {},
+        onClickAdd = {},
+    )
 }
 
 @Preview(showBackground = true)

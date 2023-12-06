@@ -13,18 +13,22 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import java.io.File
 import java.time.Instant
 import javax.inject.Inject
 
 interface FirebaseNote {
-    fun backup(noteState: NoteState)
+    fun backup(noteState: NoteState): Flow<Boolean>
     suspend fun restore(id: String): NoteState?
     suspend fun uploadFile(filePath: String, noteId: String): String
+
+    suspend fun downloadFile(filePath: String, noteId: String)
 }
 
 class FirebaseImpl @Inject constructor() : FirebaseNote {
@@ -34,18 +38,12 @@ class FirebaseImpl @Inject constructor() : FirebaseNote {
     @Inject
     lateinit var noteSave: NoteSave
 
-    override fun backup(noteState: NoteState) {
-        runBlocking {
-            val listJob = mutableListOf<Job>()
-            noteState.attachments.forEach {
-                val job = launch {
-                    val uri = uploadFile(it, noteState.id)
-                    noteState.attachments.add(uri)
-                }
-                listJob.add(job)
-            }
-            listJob.forEach {
-                it.join()
+    override fun backup(noteState: NoteState): Flow<Boolean> = flow {
+        noteState.attachments.forEach {
+            val job = with(Dispatchers.IO) {
+                val uri = uploadFile(it, noteState.id)
+                Log.d("FIREBASE", "file uploaded")
+                noteState.attachments.add(uri)
             }
         }
 
@@ -54,19 +52,22 @@ class FirebaseImpl @Inject constructor() : FirebaseNote {
         }.addOnFailureListener {
             Log.d("FIREBASE", "failed to update note" + it.message)
         }
+        emit(true)
     }
 
     override suspend fun restore(id: String): NoteState? {
         val docRef = db.collection("notes").document(id)
         var noteState: NoteState? = null
         docRef.get().addOnSuccessListener { docs ->
+            Log.d("FIREBASE", docs.data.toString())
             noteState = NoteState(
                 id = (docs.data?.get("id")).toString(),
                 userId = (docs.data?.get("user")).toString(),
                 title = (docs.data?.get("title")).toString(),
                 content = (docs.data?.get("content")).toString(),
                 timeUpdate = Instant.ofEpochSecond(
-                    (docs.data?.get("timeUpdate") as Map<*, *>).get("epochSecond").toString().toLong(),
+                    (docs.data?.get("timeUpdate") as Map<*, *>).get("epochSecond").toString()
+                        .toLong(),
                     (docs.data?.get("timeUpdate") as Map<*, *>).get("nano").toString().toLong()
                 ),
                 timeRestore = Instant.now(),
@@ -78,13 +79,15 @@ class FirebaseImpl @Inject constructor() : FirebaseNote {
                         type = HistoryType.valueOf(it.get("type").toString()),
                         userId = it.get("userId").toString(),
                         timestamp = Instant.ofEpochSecond(
-                            (docs.data?.get("timestamp") as Map<*, *>).get("epochSecond").toString().toLong(),
-                            (docs.data?.get("timestamp") as Map<*, *>).get("nano").toString().toLong()
+                            (it.get("timestamp") as Map<*, *>).get("epochSecond").toString()
+                                .toLong(),
+                            (it.get("timestamp") as Map<*, *>).get("nano").toString()
+                                .toLong()
                         )
                     )
                 }.toMutableList(),
                 attachments = ((docs.data?.get("attachments")) as List<String>).toMutableList(),
-                attachmentCount = ((docs.data?.get("attachmentCount")) as Int).toInt()
+                attachmentCount = ((docs.data?.get("attachmentCount")) as Long)
             )
             Log.d("FIREBASE", noteState.toString())
         }.await()
@@ -96,7 +99,7 @@ class FirebaseImpl @Inject constructor() : FirebaseNote {
     }
 
     override suspend fun uploadFile(filePath: String, noteId: String): String {
-        val file = Uri.fromFile(File("$filePath.zip"))
+        val file = Uri.fromFile(File("$filePath"))
         val storageRef = storage.reference.child(noteId + "/" + file.lastPathSegment)
         val upload = storageRef.putFile(file)
         var downloadUri: Uri = Uri.EMPTY
@@ -115,7 +118,11 @@ class FirebaseImpl @Inject constructor() : FirebaseNote {
         }.addOnFailureListener {
             Log.d("FIREBASE", "upload failed" + it.message)
         }.await()
-        return downloadUri.toString()
+        return uriTask.toString()
+    }
+
+    override suspend fun downloadFile(filePath: String, noteId: String) {
+        TODO("Not yet implemented")
     }
 }
 

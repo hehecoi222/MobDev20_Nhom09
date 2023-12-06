@@ -12,7 +12,7 @@ data class NoteState(
     val timeUpdate: Instant = Instant.now(),
     val timeRestore: Instant = Instant.now(),
     val history: MutableList<NoteHistory> = mutableListOf(),
-    val attachmentCount: Int = 0,
+    val attachmentCount: Long = 0,
     val attachments: MutableList<String> = mutableListOf(),
     val notificationTime: Instant = Instant.now(),
     val notificationId: String = "",

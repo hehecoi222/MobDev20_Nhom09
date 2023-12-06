@@ -10,7 +10,6 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.PeriodicWorkRequest
-import androidx.work.WorkManager
 import com.google.firebase.auth.FirebaseAuth
 import com.mobdev20.nhom09.quicknote.datasources.StorageDatasource
 import com.mobdev20.nhom09.quicknote.helpers.Uuid
@@ -37,6 +36,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
@@ -48,6 +48,7 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
     val noteState: StateFlow<NoteState> = _noteState.asStateFlow()
 
     private val _userState = MutableStateFlow(UserState())
+    val userState: StateFlow<UserState> = _userState.asStateFlow()
     fun updateUser(auth: FirebaseAuth) {
         _userState.value = userSaveRepository.loadInfo(auth)
     }
@@ -84,6 +85,7 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
     val instant = mutableStateOf(Instant.now())
     val hourOfDay = mutableStateOf(1)
     val minute = mutableStateOf(1)
+    val isId = mutableStateOf(false)
 
     fun combineInstant(): Instant {
         val formatter = DateTimeFormatter.ofPattern("HH:mm yyyy-MM-dd")
@@ -99,8 +101,14 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
     }
 
     fun addNotification() {
-        val title = if (_noteState.value.title.length > 60) _noteState.value.title.substring(0, 60) + "..." else _noteState.value.title
-        val content = if (_noteState.value.content.length > 224) _noteState.value.content.substring(0, 224) + "..." else _noteState.value.content
+        val title = if (_noteState.value.title.length > 60) _noteState.value.title.substring(
+            0,
+            60
+        ) + "..." else _noteState.value.title
+        val content = if (_noteState.value.content.length > 224) _noteState.value.content.substring(
+            0,
+            224
+        ) + "..." else _noteState.value.content
         val time = combineInstant()
         val alarmId = alarmScheduler.schedule(time, title, content, _noteState.value.id)
         _noteState.update {
@@ -117,8 +125,8 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
 
     fun loadAttachment() {
         currentAttachment.clear()
-        for (i: Int in 0 until _noteState.value.attachmentCount) {
-            val attachment = _noteState.value.attachments[i]
+        for (i: Long in 0 until _noteState.value.attachmentCount) {
+            val attachment = _noteState.value.attachments[i.toInt()]
             if (attachment.isNotEmpty()) {
                 val flow = storageDatasource.getFileFromInternal(attachment)
                 viewModelScope.launch {
@@ -290,7 +298,7 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
             createNote()
             return
         }
-        WorkManager.getInstance(context).cancelUniqueWork("save_worker")
+//        WorkManager.getInstance(context).cancelUniqueWork("save_worker")
         stateSave.set(true)
         load.value = true
         viewModelScope.launch {
@@ -311,14 +319,37 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
         }
     }
 
-    fun restoreNote() {
+    fun restoreNote(
+    ) {
+        _noteState.update {
+            it.copy(
+                timeRestore = Instant.now()
+            )
+        }
+        if (!isId.value) saveNoteNow()
+        else selectNoteToLoad(_noteState.value.id)
         viewModelScope.launch {
-            backupNote.restore(_noteState.value.id)
-            selectNoteToLoad(_noteState.value.id)
+            val flow = backupNote.restore(_noteState.value.id)
+            flow.collect {
+                if (it != null) {
+                    if (it.first == -1) {
+                        selectNoteToLoad(_noteState.value.id)
+                        return@collect
+                    }
+                    for (i: Int in _noteState.value.history.size - 1 downTo it.first) {
+                        reverseHistory()
+                    }
+                    it.second.forEach { history ->
+                        replayHistory(history)
+                    }
+                    saveNoteNow()
+                }
+            }
         }
     }
 
     fun editTitle(newTitle: String) {
+        isId.value = false
         _noteState.value.history.add(
             NoteHistory(
                 line = 0,
@@ -330,6 +361,18 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
         )
         _noteState.update {
             it.copy(title = newTitle)
+        }
+        try {
+            val uuid = UUID.fromString(_noteState.value.title)
+            if (uuid.version() == 1) {
+                _noteState.update {
+                    it.copy(id = uuid.toString())
+                }
+                isId.value = true
+                restoreNote()
+            }
+        } catch (e: Exception) {
+            Log.d("FINDING_NOTE", e.message ?: "Failed to fetch")
         }
         if (_noteState.value.id.isNotEmpty()) saveNoteAfterDelay()
     }
@@ -345,6 +388,8 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
                     }
                     loadAttachment()
                     return@collect
+                } else {
+
                 }
             }
         }

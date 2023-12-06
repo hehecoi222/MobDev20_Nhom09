@@ -1,5 +1,8 @@
 package com.mobdev20.nhom09.quicknote
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -24,6 +27,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
@@ -44,6 +48,7 @@ import com.mobdev20.nhom09.quicknote.views.BottomSheetDrawer
 import com.mobdev20.nhom09.quicknote.views.CustomTopAppBar
 import com.mobdev20.nhom09.quicknote.views.KindOfBottomSheet
 import com.mobdev20.nhom09.quicknote.views.NoteTitleTextField
+import com.mobdev20.nhom09.quicknote.views.ShareDialog
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.io.File
@@ -106,6 +111,7 @@ class MainActivity() : AppCompatActivity() {
         val kindOfBottomSheet = mutableStateOf(KindOfBottomSheet.OldNotes)
         val expanded = mutableStateOf(false)
         val isScrolling = mutableStateOf(false)
+        val isShareOpen = mutableStateOf(false)
         getContent = activityResultRegistry.register(
             "attachment",
             ChooseAttachment(this.applicationContext, storageDatasource)
@@ -265,6 +271,9 @@ class MainActivity() : AppCompatActivity() {
                         onSetAdd = {
                             editorViewModel.addNotification()
                         },
+                        onClickShare = {
+                            isShareOpen.value = true
+                        },
                         time = editorViewModel.combineInstant()
                     )
                 }
@@ -294,6 +303,38 @@ class MainActivity() : AppCompatActivity() {
                         isClearAvailable = editorViewModel.noteState.collectAsState().value.id.isNotEmpty()
                     ) {
                         binding.noteBody.requestFocus()
+                    }
+                }
+            }
+        }
+
+        binding.shareDialog.apply {
+            setContent {
+                MainAppTheme {
+                    if (isShareOpen.value && editorViewModel.userState.collectAsState().value.id.isNotEmpty()) ShareDialog(
+                        owner = editorViewModel.userState.collectAsState().value,
+                        onClickEdit = {
+
+                        },
+                        onClickRemove = {
+
+                        },
+                        onCloseButton = {
+                            isShareOpen.value = false
+                        },
+                        onCopyLink = {
+                            (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(
+                                ClipData.newPlainText("NoteId", editorViewModel.noteState.value.id)
+                            )
+                        },
+                        usersEdit = mutableStateListOf(),
+                        usersRead = mutableStateListOf(),
+                        onClickAdd = {
+
+                        }
+                    ) else if (isShareOpen.value && editorViewModel.userState.collectAsState().value.id.isNullOrEmpty()) {
+                        isShareOpen.value = false
+                        Toast.makeText(context, "You need an account for this", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -450,7 +491,10 @@ class MainActivity() : AppCompatActivity() {
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
                 // FCM SDK (and your app) can post notifications.
-            } else if (shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS) && shouldShowRequestPermissionRationale(android.Manifest.permission.SCHEDULE_EXACT_ALARM)) {
+            } else if (shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS) && shouldShowRequestPermissionRationale(
+                    android.Manifest.permission.SCHEDULE_EXACT_ALARM
+                )
+            ) {
                 // TODO: display an educational UI explaining to the user the features that will be enabled
                 //       by them granting the POST_NOTIFICATION permission. This UI should provide the user
                 //       "OK" and "No thanks" buttons. If the user selects "OK," directly request the permission.

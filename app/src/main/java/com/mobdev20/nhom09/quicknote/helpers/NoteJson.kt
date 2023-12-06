@@ -9,6 +9,7 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
 import java.time.Instant
 
 class NoteJson {
@@ -61,7 +62,7 @@ class NoteJson {
                 attachments = model["attachmentsPath"]?.jsonArray?.map {
                     it?.jsonPrimitive?.content ?: ""
                 }!!.toMutableList(),
-                attachmentCount = model["attachmentCount"]?.jsonPrimitive?.int ?: 0,
+                attachmentCount = model["attachmentCount"]?.jsonPrimitive?.long ?: 0,
                 notificationTime = Instant.parse(model["notificationTime"]?.jsonPrimitive?.content),
                 notificationId = model["notificationId"]?.jsonPrimitive?.content ?: "",
                 timeUpdate = Instant.parse(model["timeUpdate"]?.jsonPrimitive?.content),
