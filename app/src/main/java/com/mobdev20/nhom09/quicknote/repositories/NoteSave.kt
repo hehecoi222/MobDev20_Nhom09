@@ -12,4 +12,5 @@ interface NoteSave {
     suspend fun update(noteState: NoteState)
 
     suspend fun delete(id: String)
+    suspend fun updateFromModel(id: String, model: String)
 }

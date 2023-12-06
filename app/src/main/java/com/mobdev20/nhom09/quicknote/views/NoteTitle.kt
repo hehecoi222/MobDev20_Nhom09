@@ -71,7 +71,7 @@ fun NoteTitleTextField(
                 },
                 modifier = Modifier
                     .focusRequester(focusRequester = focusRequester)
-                    .weight(1f)
+                    .weight(.85f)
                     .height(IntrinsicSize.Min),
                 textStyle = MaterialTheme.typography.displaySmall.copy(color = MaterialTheme.colorScheme.onSurface),
                 decorationBox = { innerTextField ->
@@ -97,7 +97,7 @@ fun NoteTitleTextField(
                     )
                 )
             )
-            AnimatedVisibility(visible = isClearAvailable) {
+            AnimatedVisibility(visible = isClearAvailable, modifier = Modifier.weight(.15f)) {
                 IconButton(onClick = clearState, modifier = Modifier
                     .size(24.dp)) {
                     Icon(
@@ -119,12 +119,13 @@ fun NoteTitleTextField(
         ) {
             noteList.filter {
                 val valueSplit = value.split(" ")
-                var check = false
+                var check = true
                 valueSplit.forEach { searchTerm ->
-                    if (searchTerm.isNotEmpty() && it.combinedContent.lowercase()
-                            .contains(searchTerm.lowercase())
+                    if (searchTerm.isEmpty())
+                    else if (searchTerm.isNotEmpty() && !it.combinedContent
+                            .contains(searchTerm, true)
                     ) {
-                        check = true
+                        check = false
                         return@forEach
                     }
                 }

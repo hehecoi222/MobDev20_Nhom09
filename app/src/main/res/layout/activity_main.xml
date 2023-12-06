@@ -75,4 +75,13 @@
         tools:composableName="com.mobdev20.nhom09.quicknote.views.BottomSheetDrawerKt.BottomSheetDrawerPreview">
 
     </androidx.compose.ui.platform.ComposeView>
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/share_dialog"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:composableName="com.mobdev20.nhom09.quicknote.views.ShareDialogKt.ShareDialogPreview">
+
+    </androidx.compose.ui.platform.ComposeView>
 </androidx.constraintlayout.widget.ConstraintLayout>

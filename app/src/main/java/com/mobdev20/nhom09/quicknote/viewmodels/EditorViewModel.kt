@@ -1,5 +1,6 @@
 package com.mobdev20.nhom09.quicknote.viewmodels
 
+import android.content.Context
 import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.compose.runtime.MutableState
@@ -8,9 +9,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.PeriodicWorkRequest
 import com.google.firebase.auth.FirebaseAuth
 import com.mobdev20.nhom09.quicknote.datasources.StorageDatasource
 import com.mobdev20.nhom09.quicknote.helpers.Uuid
+import com.mobdev20.nhom09.quicknote.repositories.AlarmScheduler
 import com.mobdev20.nhom09.quicknote.repositories.BackupNote
 import com.mobdev20.nhom09.quicknote.repositories.NoteSave
 import com.mobdev20.nhom09.quicknote.repositories.UserSave
@@ -20,6 +23,7 @@ import com.mobdev20.nhom09.quicknote.state.NoteHistory
 import com.mobdev20.nhom09.quicknote.state.NoteOverview
 import com.mobdev20.nhom09.quicknote.state.NoteState
 import com.mobdev20.nhom09.quicknote.state.UserState
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,15 +33,22 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
+
 //@HiltViewModel
-class EditorViewModel @Inject constructor() : ViewModel() {
+class EditorViewModel @Inject constructor(@ApplicationContext private val context: Context) :
+    ViewModel() {
     private val _noteState = MutableStateFlow(NoteState())
     val noteState: StateFlow<NoteState> = _noteState.asStateFlow()
 
     private val _userState = MutableStateFlow(UserState())
+    val userState: StateFlow<UserState> = _userState.asStateFlow()
     fun updateUser(auth: FirebaseAuth) {
         _userState.value = userSaveRepository.loadInfo(auth)
     }
@@ -54,6 +65,9 @@ class EditorViewModel @Inject constructor() : ViewModel() {
     @Inject
     lateinit var storageDatasource: StorageDatasource
 
+    @Inject
+    lateinit var alarmScheduler: AlarmScheduler
+
     private val stateSave = AtomicBoolean(false)
 
     val load = mutableStateOf(false)
@@ -66,9 +80,53 @@ class EditorViewModel @Inject constructor() : ViewModel() {
     val noteList: SnapshotStateList<NoteOverview> = _noteList
 
     val currentAttachment = mutableStateListOf<Attachment>()
+    private var saveWorker: PeriodicWorkRequest? = null
+
+    val instant = mutableStateOf(Instant.now())
+    val hourOfDay = mutableStateOf(1)
+    val minute = mutableStateOf(1)
+    val isId = mutableStateOf(false)
+
+    fun combineInstant(): Instant {
+        val formatter = DateTimeFormatter.ofPattern("HH:mm yyyy-MM-dd")
+        val instantParse =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.systemDefault())
+        Log.d("TIME_PARSE", instantParse.format(instant.value))
+        val localTime = LocalDateTime.parse(
+            "${if (hourOfDay.value >= 10) hourOfDay.value else "0" + hourOfDay.value}:${if (minute.value >= 10) minute.value else "0" + minute.value} ${
+                instantParse.format(instant.value)
+            }", formatter
+        )
+        return localTime.atZone(ZoneId.systemDefault()).toInstant()
+    }
+
+    fun addNotification() {
+        val title = if (_noteState.value.title.length > 60) _noteState.value.title.substring(
+            0,
+            60
+        ) + "..." else _noteState.value.title
+        val content = if (_noteState.value.content.length > 224) _noteState.value.content.substring(
+            0,
+            224
+        ) + "..." else _noteState.value.content
+        val time = combineInstant()
+        val alarmId = alarmScheduler.schedule(time, title, content, _noteState.value.id)
+        _noteState.update {
+            it.copy(notificationId = alarmId.toString(), notificationTime = time)
+        }
+    }
+
+    fun deleteNotification() {
+        alarmScheduler.cancel(noteState.value.notificationId.toInt())
+        _noteState.update {
+            it.copy(notificationId = "", notificationTime = Instant.now())
+        }
+    }
+
     fun loadAttachment() {
         currentAttachment.clear()
-        _noteState.value.attachments.forEach { attachment ->
+        for (i: Long in 0 until _noteState.value.attachmentCount) {
+            val attachment = _noteState.value.attachments[i.toInt()]
             if (attachment.isNotEmpty()) {
                 val flow = storageDatasource.getFileFromInternal(attachment)
                 viewModelScope.launch {
@@ -100,7 +158,10 @@ class EditorViewModel @Inject constructor() : ViewModel() {
             _noteState.value.attachments.removeIf {
                 it == attachment.filepath
             }
-            saveNoteAfterDelay()
+            _noteState.update {
+                it.copy(attachmentCount = it.attachmentCount - 1)
+            }
+            saveNoteNow()
             storageDatasource.deleteFile(attachment.filepath)
         }
     }
@@ -120,13 +181,19 @@ class EditorViewModel @Inject constructor() : ViewModel() {
             }
         }
         _noteState.value.attachments.add(file.absolutePath)
-        saveNoteAfterDelay()
+        _noteState.update {
+            it.copy(attachmentCount = it.attachmentCount + 1)
+        }
+        saveNoteNow()
     }
 
     fun deleteNote() {
         viewModelScope.launch {
             _noteList.removeIf {
                 it.id == noteState.value.id
+            }
+            currentAttachment.forEach {
+                deleteAttachment(it)
             }
             noteSaveRepository.delete(noteState.value.id)
             clearState()
@@ -165,7 +232,7 @@ class EditorViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    fun saveNoteAfterDelay() {
+    private fun saveNoteAfterDelay() {
         if (_noteState.value.id.isEmpty()) {
             createNote()
             return
@@ -174,6 +241,7 @@ class EditorViewModel @Inject constructor() : ViewModel() {
             stateSave.set(true)
             load.value = false
             viewModelScope.launch {
+                delay(5000)
                 _noteState.update {
                     it.copy(
                         timeUpdate = Instant.now()
@@ -183,40 +251,105 @@ class EditorViewModel @Inject constructor() : ViewModel() {
                 stateSave.set(false)
             }
         }
+//        if (_noteState.value.id.isEmpty()) {
+//            createNote()
+//            return
+//        }
+//        viewModelScope.launch() {
+//            var id: UUID? = null
+//            if (saveWorker != null) {
+//                id = saveWorker!!.id
+//            }
+//            val file = File.createTempFile("notetemp", _noteState.value.id, context.cacheDir)
+//            file.deleteOnExit()
+//            try {
+//                val outputStreamWriter =
+//                    OutputStreamWriter(file.outputStream())
+//                outputStreamWriter.write(NoteJson.convertModel(_noteState.value))
+//                outputStreamWriter.close()
+//            } catch (e: IOException) {
+//                Log.e("Exception", "File write failed: $e")
+//            }
+//            val saveWork =
+//                PeriodicWorkRequestBuilder<SaveWorker>(Duration.ofSeconds(5L)).setInputData(
+//                    workDataOf(
+//                        "note" to file.absolutePath,
+//                        "noteId" to _noteState.value.id,
+//                    )
+//                )
+//            if (id != null) {
+//                saveWork.setId(id)
+//            }
+//            saveWorker = saveWork.build()
+//            if (id != null) {
+//                WorkManager.getInstance(context).updateWork(saveWorker!!)
+//            } else {
+//                WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+//                    "save_worker",
+//                    ExistingPeriodicWorkPolicy.UPDATE,
+//                    saveWorker!!
+//                )
+//            }
+//        }
+    }
+
+    fun saveNoteNow() {
+        if (_noteState.value.id.isEmpty()) {
+            createNote()
+            return
+        }
+//        WorkManager.getInstance(context).cancelUniqueWork("save_worker")
+        stateSave.set(true)
+        load.value = true
+        viewModelScope.launch {
+            _noteState.update {
+                it.copy(
+                    timeUpdate = Instant.now()
+                )
+            }
+            noteSaveRepository.update(_noteState.value)
+            stateSave.set(false)
+        }
     }
 
     fun backupNote() {
         viewModelScope.launch {
+            saveNoteNow()
             backupNote.backup(_noteState.value.id)
         }
     }
 
-    fun restoreNote() {
+    fun restoreNote(
+    ) {
+        _noteState.update {
+            it.copy(
+                timeRestore = Instant.now()
+            )
+        }
+        if (!isId.value) saveNoteNow()
+        else selectNoteToLoad(_noteState.value.id)
         viewModelScope.launch {
-            backupNote.restore(_noteState.value.id)
-            selectNoteToLoad(_noteState.value.id)
+            val flow = backupNote.restore(_noteState.value.id)
+            flow.collect {
+                if (it != null) {
+                    if (it.first == -1) {
+                        selectNoteToLoad(_noteState.value.id)
+                        return@collect
+                    }
+                    for (i: Int in _noteState.value.history.size - 1 downTo it.first) {
+                        reverseHistory()
+                    }
+                    it.second.forEach { history ->
+                        replayHistory(history)
+                    }
+                    saveNoteNow()
+                }
+            }
         }
     }
 
     fun editTitle(newTitle: String) {
-//        if (newTitle.isEmpty() && _noteState.value.title.isNotEmpty()) {
-//            _clearState()
-//        } else {
-//            _noteState.update {
-//                it.copy(title = newTitle)
-//            }
-//            val flow = noteSaveRepository.loadNote(newTitle)
-//            viewModelScope.launch {
-//                flow.collect { col ->
-//                    if (col != null)
-//                        if (_noteState.value.title == col.id)
-//                            _noteState.update {
-//                                load.value = true
-//                                col
-//                            }
-//                }
-//            }
-//        }
+        isId.value = false
         _noteState.value.history.add(
             NoteHistory(
                 line = 0,
@@ -228,6 +361,18 @@ class EditorViewModel @Inject constructor() : ViewModel() {
         )
         _noteState.update {
             it.copy(title = newTitle)
+        }
+        try {
+            val uuid = UUID.fromString(_noteState.value.title)
+            if (uuid.version() == 1) {
+                _noteState.update {
+                    it.copy(id = uuid.toString())
+                }
+                isId.value = true
+                restoreNote()
+            }
+        } catch (e: Exception) {
+            Log.d("FINDING_NOTE", e.message ?: "Failed to fetch")
         }
         if (_noteState.value.id.isNotEmpty()) saveNoteAfterDelay()
     }
@@ -243,6 +388,8 @@ class EditorViewModel @Inject constructor() : ViewModel() {
                     }
                     loadAttachment()
                     return@collect
+                } else {
+
                 }
             }
         }
@@ -384,12 +531,15 @@ class EditorViewModel @Inject constructor() : ViewModel() {
         _noteState.update {
             it.copy(content = newSplit.joinToString("\n"))
         }
-        saveNoteAfterDelay()
+        saveNoteNow()
     }
 
     fun clearState() {
         load.value = true
-        _noteState.value = NoteState()
+        saveNoteNow()
+        _noteState.update {
+            NoteState()
+        }
         deloadAttachment()
         currentAttachment.clear()
         currentReverseHistory.value = null

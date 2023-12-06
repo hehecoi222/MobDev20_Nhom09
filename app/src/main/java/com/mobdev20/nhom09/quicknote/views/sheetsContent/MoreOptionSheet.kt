@@ -30,7 +30,10 @@ fun MoreOptionSheet(modifier: Modifier = Modifier,
                     onClickDelete: () -> Unit,
                     onClickAttachments: () -> Unit,
                     onClickBackup: () -> Unit,
-                    onClickSync: () -> Unit
+                    onClickSync: () -> Unit,
+                    onClickNoti: () -> Unit,
+                    onClickShare: () -> Unit,
+                    isNotiOn: Boolean,
                     ) {
     Row(modifier = modifier, horizontalArrangement = Arrangement.SpaceAround) {
         MoreOption(
@@ -52,16 +55,23 @@ fun MoreOptionSheet(modifier: Modifier = Modifier,
             onClick = onClickSync
         )
         MoreOption(
+            icon = R.drawable.outline_share_24,
+            value = R.string.more_opt_label_share,
+            visible = true,
+            onClick = onClickShare
+        )
+        MoreOption(
             icon = R.drawable.outline_attach_file_24,
             value = R.string.more_opt_label_attach,
             visible = true,
             onClick = onClickAttachments
         )
-//        MoreOption(
-//            icon = R.drawable.outline_notification_add_24,
-//            value = R.string.more_opt_label_noti_add,
-//            visible = true
-//        )
+        MoreOption(
+            icon = if (isNotiOn) R.drawable.outline_notifications_active_24 else R.drawable.outline_notification_add_24,
+            value = R.string.more_opt_label_noti_add,
+            visible = true,
+            onClick = onClickNoti
+        )
     }
 }
 

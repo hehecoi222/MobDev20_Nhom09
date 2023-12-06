@@ -21,6 +21,10 @@ class NoteSaveImpl @Inject constructor() : NoteSave {
         noteDataStore.writeTo(noteState.id, model)
     }
 
+    override suspend fun updateFromModel(id: String, model: String) {
+        noteDataStore.writeTo(id, model)
+    }
+
     override suspend fun delete(id: String) {
         noteDataStore.delete(id)
     }
