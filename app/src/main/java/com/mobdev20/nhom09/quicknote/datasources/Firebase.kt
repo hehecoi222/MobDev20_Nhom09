@@ -4,6 +4,7 @@ import android.net.Uri
 import android.util.Log
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.StorageException
 import com.google.firebase.storage.ktx.storage
 import com.mobdev20.nhom09.quicknote.repositories.NoteSave
 import com.mobdev20.nhom09.quicknote.state.HistoryType
@@ -14,10 +15,8 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.File
 import java.time.Instant
@@ -58,8 +57,14 @@ class FirebaseImpl @Inject constructor() : FirebaseNote {
     override suspend fun restore(id: String): NoteState? {
         val docRef = db.collection("notes").document(id)
         var noteState: NoteState? = null
+        var attachments: MutableList<String>? = null
+
         docRef.get().addOnSuccessListener { docs ->
             Log.d("FIREBASE", docs.data.toString())
+            if(docs.data == null) {
+                Log.d("FIREBASE", "No note Found")
+                return@addOnSuccessListener
+            }
             noteState = NoteState(
                 id = (docs.data?.get("id")).toString(),
                 userId = (docs.data?.get("user")).toString(),
@@ -89,8 +94,16 @@ class FirebaseImpl @Inject constructor() : FirebaseNote {
                 attachments = ((docs.data?.get("attachments")) as List<String>).toMutableList(),
                 attachmentCount = ((docs.data?.get("attachmentCount")) as Long)
             )
+            attachments = ((docs.data?.get("attachments")) as List<String>).toMutableList()
             Log.d("FIREBASE", noteState.toString())
         }.await()
+
+        if(attachments != null) {
+            attachments?.forEach{
+                downloadFile(it, id)
+            }
+        }
+
         return if (noteState != null) {
             noteState
         } else {
@@ -121,8 +134,35 @@ class FirebaseImpl @Inject constructor() : FirebaseNote {
         return uriTask.toString()
     }
 
+    private fun cloudPath(localPath: String, docID: String) : String{
+        return docID + "/" + File(localPath).name // userID + "/" + docID + "/" + file.name
+    }
+
     override suspend fun downloadFile(filePath: String, noteId: String) {
-        TODO("Not yet implemented")
+        val storageRef = storage.reference.child(cloudPath(filePath, noteId))
+        val localFile = File(filePath)
+
+        storageRef.getFile(localFile)
+            .addOnSuccessListener {
+                Log.d("DownloadSuccess", "Download Image success")
+                Log.d("DownloadSuccess", "localStorage: $filePath")
+            }.addOnFailureListener { exception ->
+                Log.e("!DownloadSuccess", exception.message.toString())
+                Log.e("!DownloadSuccess", "localStorage: $filePath")
+                Log.e("!DownloadSuccess", "cloudStorage: " + cloudPath(filePath, noteId))
+
+                when (exception) {
+                    is StorageException -> {
+                        Log.e("!DownloadSuccess",
+                            "HTTP result code:" + exception.httpResultCode)
+                        exception.cause.let { cause ->
+                            Log.e("!DownloadSuccess", "Inner exception: ", cause)
+                        }
+                    }
+                    else -> {
+                    }
+                }
+            }.await()
     }
 }
 
