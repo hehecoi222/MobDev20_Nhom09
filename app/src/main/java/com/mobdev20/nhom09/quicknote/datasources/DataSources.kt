@@ -136,7 +136,7 @@ class DataSources {
         val paths = jsonObject.get("attachmentPaths") as MutableList<*>
 
         paths.forEach{
-            downloadImg(cloudPath(it as String, docID), it)
+            downloadImg(it as String, docID)
         }
     }
 
@@ -157,8 +157,8 @@ class DataSources {
         return mapper.writeValueAsString(data)
     }
 
-    private fun downloadImg(cloudPath: String, localPath: String) {
-        val storageRef = storage.reference.child(cloudPath)
+    private fun downloadImg(localPath: String, noteID: String) {
+        val storageRef = storage.reference.child(cloudPath(localPath, noteID))
         val localFile = File(localPath)
 
         storageRef.getFile(localFile)
@@ -168,7 +168,7 @@ class DataSources {
             }.addOnFailureListener { exception ->
                 Log.e("!DownloadSuccess", exception.message.toString())
                 Log.e("!DownloadSuccess", "localStorage: $localPath")
-                Log.e("!DownloadSuccess", "cloudStorage: $cloudPath")
+                Log.e("!DownloadSuccess", "cloudStorage: " + cloudPath(localPath, noteID))
 
                 when (exception) {
                     is StorageException -> {
