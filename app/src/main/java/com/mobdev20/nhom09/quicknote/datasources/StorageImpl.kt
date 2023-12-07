@@ -152,6 +152,7 @@ class StorageDatasourceImpl @Inject constructor(@ApplicationContext private val 
         if (!fileStorage.exists()) {
             fileStorage.mkdir()
         }
+        try {
         ZipFile(path).extractAll(fileStorage.absolutePath + "/")
         val filesList = fileStorage.listFiles()
         for (file in filesList) {
@@ -159,6 +160,9 @@ class StorageDatasourceImpl @Inject constructor(@ApplicationContext private val 
             if (file_name.equals(fileName, ignoreCase = true)) {
                 emit(file)
             }
+        }} catch (e: Exception) {
+            e.message?.let { Log.d(TAG, it) }
+            Log.d(TAG, e.stackTrace.toString())
         }
     }
 
