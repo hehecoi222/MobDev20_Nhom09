@@ -36,7 +36,6 @@ import androidx.compose.ui.unit.dp
 import com.mobdev20.nhom09.quicknote.R
 import com.mobdev20.nhom09.quicknote.state.UserState
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShareDialog(
     modifier: Modifier = Modifier,
@@ -77,23 +76,23 @@ fun ShareDialog(
         )
     }, text = {
         Column {
-            Text(text = "Share to people you choose, paste their ids in here, then send them a link")
+            Text(text = "Send the note id and paste into Note Title section")
             Spacer(modifier = Modifier.padding(8.dp))
             Divider()
-            Spacer(modifier = Modifier.padding(8.dp))
-            OutlinedTextField(value = value.value, onValueChange = {
-                value.value = it
-            }, label = {
-                Text(text = "User ID")
-            }, trailingIcon = {
-                IconButton(onClick = { onClickAdd(value.value) }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.outline_add_circle_outline_24),
-                        contentDescription = "Add",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            })
+//            Spacer(modifier = Modifier.padding(8.dp))
+//            OutlinedTextField(value = value.value, onValueChange = {
+//                value.value = it
+//            }, label = {
+//                Text(text = "User ID")
+//            }, trailingIcon = {
+//                IconButton(onClick = { onClickAdd(value.value) }) {
+//                    Icon(
+//                        painter = painterResource(id = R.drawable.outline_add_circle_outline_24),
+//                        contentDescription = "Add",
+//                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+//                    )
+//                }
+//            })
             Spacer(modifier = Modifier.padding(8.dp))
             LazyListIds(
                 owner = owner,

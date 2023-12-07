@@ -1,6 +1,7 @@
 package com.mobdev20.nhom09.quicknote.viewmodels
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.compose.runtime.MutableState
@@ -139,11 +140,22 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
                 viewModelScope.launch {
                     flow.collect {
                         if (it != null) {
-                            currentAttachment.add(
-                                Attachment(
-                                    attachment, BitmapFactory.decodeFile(it.absolutePath)
+                            val bitmap: Bitmap?
+                            try {
+                                Log.d("Note", "Created")
+                                bitmap = BitmapFactory.decodeFile(it.absolutePath)
+                                currentAttachment.add(
+                                    Attachment(
+                                        attachment, bitmap
+                                    )
                                 )
-                            )
+                            } catch (e: Exception) {
+                                currentAttachment.add(
+                                    Attachment(
+                                        attachment
+                                    )
+                                )
+                            }
                         }
                     }
                 }
@@ -179,11 +191,22 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
         viewModelScope.launch {
             flow.collect {
                 if (it != null) {
-                    currentAttachment.add(
-                        Attachment(
-                            file.absolutePath, BitmapFactory.decodeFile(it.absolutePath)
+                    val bitmap: Bitmap?
+                    try {
+                        Log.d("Note", "Created")
+                        bitmap = BitmapFactory.decodeFile(it.absolutePath)
+                        currentAttachment.add(
+                            Attachment(
+                                file.absolutePath, bitmap
+                            )
                         )
-                    )
+                    } catch (e: Exception) {
+                        currentAttachment.add(
+                            Attachment(
+                                file.absolutePath
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -203,14 +226,14 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
                 deleteAttachment(it)
             }
             noteSaveRepository.delete(noteState.value.id)
-            clearState()
+            clearStateWithoutSave()
         }
     }
 
     fun loadNoteList() {
         _noteList.clear()
         val flow = noteSaveRepository.loadListNote()
-        viewModelScope.launch {
+        val scopes = viewModelScope.launch {
             flow.collect {
                 it.forEach { create ->
                     if (create != null) {
@@ -219,6 +242,7 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
                 }
             }
         }
+        this.scopes.add(scopes)
     }
 
     fun createNote() {
@@ -333,6 +357,7 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
 
     fun restoreNote(
     ) {
+        load.value = true
         _noteState.update {
             it.copy(
                 timeRestore = Instant.now()
@@ -365,6 +390,7 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
                         )
                     }
                     saveNoteNow()
+                    load.value = false
                 }
             }
         }
@@ -565,6 +591,22 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
         }
         scopes.clear()
         saveNoteNow()
+        _noteState.update {
+            NoteState()
+        }
+        deloadAttachment()
+        currentAttachment.clear()
+        currentReverseHistory.value = null
+        redoHistory.clear()
+        loadNoteList()
+    }
+
+    fun clearStateWithoutSave() {
+        load.value = true
+        scopes.forEach {
+            it?.cancel()
+        }
+        scopes.clear()
         _noteState.update {
             NoteState()
         }

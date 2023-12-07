@@ -51,7 +51,7 @@ fun MoreOptionSheet(modifier: Modifier = Modifier,
         MoreOption(
             icon = R.drawable.outline_cloud_sync_24,
             value = R.string.sync_btn,
-            visible = true,
+            visible = false,
             onClick = onClickSync
         )
         MoreOption(
@@ -68,7 +68,7 @@ fun MoreOptionSheet(modifier: Modifier = Modifier,
         )
         MoreOption(
             icon = if (isNotiOn) R.drawable.outline_notifications_active_24 else R.drawable.outline_notification_add_24,
-            value = R.string.more_opt_label_noti_add,
+            value = if (isNotiOn) R.string.more_opt_label_noti_edit else R.string.more_opt_label_noti_add,
             visible = true,
             onClick = onClickNoti
         )

@@ -24,6 +24,7 @@ class AlarmScheduleImpl @Inject constructor(@ApplicationContext private val cont
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra("TITLE", title)
             putExtra("CONTENT", content)
+            putExtra("ID", id)
         }
         val alarmTime = time.atZone(ZoneId.systemDefault()).toEpochSecond() * 1000L
         alarmManager.setAlarmClock(
