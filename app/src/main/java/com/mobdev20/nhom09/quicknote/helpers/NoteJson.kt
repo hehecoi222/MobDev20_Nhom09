@@ -9,6 +9,7 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
 import java.time.Instant
 
 class NoteJson {
@@ -20,6 +21,11 @@ class NoteJson {
                 "userId": "${noteState.userId}",
                 "title": "${Encoder.encode(noteState.title)}",
                 "content": "${Encoder.encode(noteState.content)}",
+                "notificationTime": "${noteState.notificationTime.toString()}",
+                "notificationId": "${noteState.notificationId}",
+                "timeUpdate": "${noteState.timeUpdate.toString()}",
+                "timeRestore": "${noteState.timeRestore.toString()}",
+                "attachmentCount": ${noteState.attachmentCount},
                 "attachmentsPath": [
                 """ + noteState.attachments.map {
                 """ "${it}" """.trimIndent()
@@ -56,6 +62,11 @@ class NoteJson {
                 attachments = model["attachmentsPath"]?.jsonArray?.map {
                     it?.jsonPrimitive?.content ?: ""
                 }!!.toMutableList(),
+                attachmentCount = model["attachmentCount"]?.jsonPrimitive?.long ?: 0,
+                notificationTime = Instant.parse(model["notificationTime"]?.jsonPrimitive?.content),
+                notificationId = model["notificationId"]?.jsonPrimitive?.content ?: "",
+                timeUpdate = Instant.parse(model["timeUpdate"]?.jsonPrimitive?.content),
+                timeRestore = Instant.parse(model["timeRestore"]?.jsonPrimitive?.content),
                 history = model["history"]?.jsonArray?.map {
                     NoteHistory(
                         timestamp = Instant.parse(it.jsonObject["timestamp"]?.jsonPrimitive?.content),
