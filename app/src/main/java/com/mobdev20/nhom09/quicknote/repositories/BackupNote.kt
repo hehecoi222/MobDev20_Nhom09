@@ -6,5 +6,5 @@ import kotlinx.coroutines.flow.Flow
 
 interface BackupNote {
     suspend fun backup(id: String)
-    suspend fun restore(id: String): Flow<Pair<Int, List<NoteHistory>>?>
+    suspend fun restore(id: String, noteFirebase: NoteState?): Flow<Pair<Int, List<NoteHistory>>?>
 }

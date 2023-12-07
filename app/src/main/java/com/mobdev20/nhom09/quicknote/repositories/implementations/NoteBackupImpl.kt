@@ -59,11 +59,10 @@ class NoteBackupImpl @Inject constructor(@ApplicationContext private val context
         }
     }
 
-    override suspend fun restore(id: String): Flow<Pair<Int, List<NoteHistory>>?> = flow {
-        var noteState: NoteState?
+    override suspend fun restore(id: String, noteFirebase: NoteState?): Flow<Pair<Int, List<NoteHistory>>?> = flow {
+        var noteState: NoteState? = noteFirebase
         var currentState: NoteState?
         with(Dispatchers.IO) {
-            noteState = firebaseNote.restore(id = id)
             noteSave.loadNote(id).collect {
                 currentState = it
                 if (currentState != null && noteState != null) {
@@ -73,9 +72,8 @@ class NoteBackupImpl @Inject constructor(@ApplicationContext private val context
                     } else {
                         var index = 0
                         for (i in 0 until noteState!!.history.size) {
-                            if (currentState!!.history[i].timestamp != currentState!!.history[i].timestamp
-                                && currentState!!.history[i].contentNew != noteState!!.history[i].contentNew
-                            ) {
+                            if (i == currentState!!.history.size || (currentState!!.history[i].timestamp != currentState!!.history[i].timestamp
+                                && currentState!!.history[i].contentNew != noteState!!.history[i].contentNew)) {
                                 index = i
                                 break
                             }

@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.PeriodicWorkRequest
 import com.google.firebase.auth.FirebaseAuth
+import com.mobdev20.nhom09.quicknote.datasources.FirebaseNote
 import com.mobdev20.nhom09.quicknote.datasources.StorageDatasource
 import com.mobdev20.nhom09.quicknote.helpers.Uuid
 import com.mobdev20.nhom09.quicknote.repositories.AlarmScheduler
@@ -24,6 +25,8 @@ import com.mobdev20.nhom09.quicknote.state.NoteOverview
 import com.mobdev20.nhom09.quicknote.state.NoteState
 import com.mobdev20.nhom09.quicknote.state.UserState
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -68,6 +71,9 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
     @Inject
     lateinit var alarmScheduler: AlarmScheduler
 
+    @Inject
+    lateinit var firebase: FirebaseNote
+
     private val stateSave = AtomicBoolean(false)
 
     val load = mutableStateOf(false)
@@ -81,6 +87,7 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
 
     val currentAttachment = mutableStateListOf<Attachment>()
     private var saveWorker: PeriodicWorkRequest? = null
+    private var scopes: MutableList<Job?> = mutableListOf()
 
     val instant = mutableStateOf(Instant.now())
     val hourOfDay = mutableStateOf(1)
@@ -314,6 +321,11 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
 
     fun backupNote() {
         viewModelScope.launch {
+            _noteState.update {
+                it.copy(
+                    timeUpdate = Instant.now()
+                )
+            }
             saveNoteNow()
             backupNote.backup(_noteState.value.id)
         }
@@ -328,9 +340,14 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
         }
         if (!isId.value) saveNoteNow()
         else selectNoteToLoad(_noteState.value.id)
-        viewModelScope.launch {
-            val flow = backupNote.restore(_noteState.value.id)
-            flow.collect {
+        val scopes = viewModelScope.launch {
+            var noteState: NoteState? = null
+            val job = async {
+                noteState = firebase.restore(_noteState.value.id)
+            }
+            job.await()
+            val flow = backupNote.restore(_noteState.value.id, noteState)
+            flow.cancellable().collect {
                 if (it != null) {
                     if (it.first == -1) {
                         selectNoteToLoad(_noteState.value.id)
@@ -342,10 +359,16 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
                     it.second.forEach { history ->
                         replayHistory(history)
                     }
+                    _noteState.update { current ->
+                        current.copy(
+                            timeRestore = Instant.now()
+                        )
+                    }
                     saveNoteNow()
                 }
             }
         }
+        this.scopes.add(scopes)
     }
 
     fun editTitle(newTitle: String) {
@@ -379,7 +402,7 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
 
     fun selectNoteToLoad(noteId: String) {
         val flow = noteSaveRepository.loadNote(noteId)
-        val scope = viewModelScope.launch {
+        val scopes = viewModelScope.launch {
             flow.cancellable().collect { col ->
                 if (col != null) {
                     _noteState.update {
@@ -393,6 +416,7 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
                 }
             }
         }
+        this.scopes.add(scopes)
     }
 
     fun editBody(newBody: String, currentCursorPosition: Int) {
@@ -536,6 +560,10 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
 
     fun clearState() {
         load.value = true
+        scopes.forEach {
+            it?.cancel()
+        }
+        scopes.clear()
         saveNoteNow()
         _noteState.update {
             NoteState()
@@ -544,5 +572,6 @@ class EditorViewModel @Inject constructor(@ApplicationContext private val contex
         currentAttachment.clear()
         currentReverseHistory.value = null
         redoHistory.clear()
+        loadNoteList()
     }
 }

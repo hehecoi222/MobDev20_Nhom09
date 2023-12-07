@@ -16,6 +16,8 @@ data class NoteState(
     val attachments: MutableList<String> = mutableListOf(),
     val notificationTime: Instant = Instant.now(),
     val notificationId: String = "",
+    val readUser: MutableList<String> = mutableListOf(),
+    val writeUser: MutableList<String> = mutableListOf(),
 ) {
 }
 
