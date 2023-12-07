@@ -74,6 +74,7 @@ class StorageDatasourceImpl @Inject constructor(@ApplicationContext private val 
             zipFile.addFile(file, parameters)
             while (!zipFile.progressMonitor.getState().equals(ProgressMonitor.State.READY)) {
             }
+            Log.d(TAG, "Zipped")
             return File(dst)
         } catch (exception: Exception) {
             Log.d("ZIP_FAIL", exception.stackTrace.toString())
@@ -91,13 +92,16 @@ class StorageDatasourceImpl @Inject constructor(@ApplicationContext private val 
             val internal = imageReturnedIntent?.extras?.get("internal") == null
             try {
                 val selectedFile =
-                    if (isFile) saveFromURI(imageReturnedIntent!!.data!!)
-                        else if (internal) saveFromBitmap(
-                        imageReturnedIntent!!.extras!!.get("data") as Bitmap
-                    ) else {
+                    if (isFile) {
+                        Log.d(TAG, isFile.toString() + internal.toString())
+                        if (!internal) saveFromBitmap(
+                            imageReturnedIntent!!.extras!!.get("data") as Bitmap
+                        ) else saveFromURI(imageReturnedIntent!!.data!!)
+                    } else {
                         val byteArray = imageReturnedIntent!!.extras!!.get("data") as ByteArray
                         saveFromBitmap(BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size))
                     }
+                Log.d(TAG, "selectedFile" + selectedFile?.absolutePath)
                 return selectedFile
             } catch (e: Exception) {
                 return null
@@ -154,10 +158,12 @@ class StorageDatasourceImpl @Inject constructor(@ApplicationContext private val 
         }
         try {
         ZipFile(path).extractAll(fileStorage.absolutePath + "/")
+            Log.d(TAG, "Unzipped file")
         val filesList = fileStorage.listFiles()
         for (file in filesList) {
             val file_name = file.name;
             if (file_name.equals(fileName, ignoreCase = true)) {
+                Log.d(TAG, "Emitted")
                 emit(file)
             }
         }} catch (e: Exception) {
@@ -219,7 +225,9 @@ class ChooseAttachment @Inject constructor(
             ActivityResultContracts.PickVisualMedia()
                 .createIntent(context, PickVisualMediaRequest.Builder().build())
         )
-        intentList.add(Intent(MediaStore.ACTION_IMAGE_CAPTURE))
+        intentList.add(Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        })
         intentList.add(Intent(context, DrawActivity::class.java))
         val chooserIntent =
             Intent.createChooser(intentList.removeAt(intentList.size - 1), "Get Attachments")

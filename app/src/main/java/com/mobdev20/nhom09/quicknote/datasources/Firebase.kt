@@ -37,7 +37,7 @@ class FirebaseImpl @Inject constructor() : FirebaseNote {
     lateinit var noteSave: NoteSave
 
     override fun backup(noteState: NoteState): Flow<Boolean> = flow {
-        val newAttachment  = mutableListOf<String>()
+        val newAttachment = mutableListOf<String>()
         noteState.attachments.forEachIndexed { i, s ->
             if (i < noteState.attachmentCount) {
                 val uri = uploadFile(s, noteState.id)
@@ -62,38 +62,44 @@ class FirebaseImpl @Inject constructor() : FirebaseNote {
         val deferredDataSnapshot = task.asDeferred()
         val docs = deferredDataSnapshot.await()
         Log.d("FIREBASE", docs.data.toString())
-        noteState = NoteState(
-            id = (docs.data?.get("id")).toString(),
-            userId = (docs.data?.get("user")).toString(),
-            title = (docs.data?.get("title")).toString(),
-            content = (docs.data?.get("content")).toString(),
-            timeUpdate = Instant.ofEpochSecond(
-                (docs.data?.get("timeUpdate") as Map<*, *>).get("epochSecond").toString()
-                    .toLong(),
-                (docs.data?.get("timeUpdate") as Map<*, *>).get("nano").toString().toLong()
-            ),
-            timeRestore = Instant.now(),
-            history = ((docs.data?.get("history")) as List<Map<*, *>>).map {
-                NoteHistory(
-                    contentOld = it.get("contentOld").toString(),
-                    contentNew = it.get("contentNew").toString(),
-                    line = it.get("line").toString().toInt(),
-                    type = HistoryType.valueOf(it.get("type").toString()),
-                    userId = it.get("userId").toString(),
-                    timestamp = Instant.ofEpochSecond(
-                        (it.get("timestamp") as Map<*, *>).get("epochSecond").toString()
-                            .toLong(),
-                        (it.get("timestamp") as Map<*, *>).get("nano").toString()
-                            .toLong()
+        try {
+            noteState = NoteState(
+                id = (docs.data?.get("id")).toString(),
+                userId = (docs.data?.get("user")).toString(),
+                title = (docs.data?.get("title")).toString(),
+                content = (docs.data?.get("content")).toString(),
+                timeUpdate = Instant.ofEpochSecond(
+                    (docs.data?.get("timeUpdate") as Map<*, *>).get("epochSecond").toString()
+                        .toLong(),
+                    (docs.data?.get("timeUpdate") as Map<*, *>).get("nano").toString().toLong()
+                ),
+                timeRestore = Instant.now(),
+                history = ((docs.data?.get("history")) as List<Map<*, *>>).map {
+                    NoteHistory(
+                        contentOld = it.get("contentOld").toString(),
+                        contentNew = it.get("contentNew").toString(),
+                        line = it.get("line").toString().toInt(),
+                        type = HistoryType.valueOf(it.get("type").toString()),
+                        userId = it.get("userId").toString(),
+                        timestamp = Instant.ofEpochSecond(
+                            (it.get("timestamp") as Map<*, *>).get("epochSecond").toString()
+                                .toLong(),
+                            (it.get("timestamp") as Map<*, *>).get("nano").toString()
+                                .toLong()
+                        )
                     )
-                )
-            }.toMutableList(),
-            attachments = ((docs.data?.get("attachments")) as List<String>).toMutableList(),
-            attachmentCount = ((docs.data?.get("attachmentCount")) as Long)
-        )
-        Log.d("FIREBASE", noteState.toString())
-        noteState?.attachments?.forEachIndexed { index, s ->
-            if (index < noteState?.attachmentCount!!) downloadFile(s, noteState?.id!!)
+                }.toMutableList(),
+                attachments = ((docs.data?.get("attachments")) as List<String>).toMutableList(),
+                attachmentCount = ((docs.data?.get("attachmentCount")) as Long)
+            )
+            Log.d("FIREBASE", noteState.toString())
+            noteState?.attachments?.forEachIndexed { index, s ->
+                if (index < noteState?.attachmentCount!!) downloadFile(s, noteState?.id!!)
+            }
+        } catch (e: Exception) {
+            e.message?.let { Log.d("FIREBASE", it) }
+            Log.d("FIREBASE", e.stackTrace.toString())
+            noteState = null
         }
 
         return if (noteState != null) {

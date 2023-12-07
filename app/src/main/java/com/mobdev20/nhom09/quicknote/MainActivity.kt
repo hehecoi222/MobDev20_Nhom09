@@ -9,7 +9,6 @@ import android.content.res.Configuration
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -334,7 +333,8 @@ class MainActivity() : AppCompatActivity() {
                         }
                     ) else if (isShareOpen.value && editorViewModel.userState.collectAsState().value.id.isNullOrEmpty()) {
                         isShareOpen.value = false
-                        Toast.makeText(context, "You need an account for this", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "You need an account for this", Toast.LENGTH_SHORT)
+                            .show()
                     }
                 }
             }
@@ -479,31 +479,29 @@ class MainActivity() : AppCompatActivity() {
 
     private fun askNotificationPermission() {
         // This is only necessary for API level >= 33 (TIRAMISU)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.POST_NOTIFICATIONS
-                ) ==
-                PackageManager.PERMISSION_GRANTED
-                && ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.SCHEDULE_EXACT_ALARM
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                // FCM SDK (and your app) can post notifications.
-            } else if (shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS) && shouldShowRequestPermissionRationale(
-                    android.Manifest.permission.SCHEDULE_EXACT_ALARM
-                )
-            ) {
-                // TODO: display an educational UI explaining to the user the features that will be enabled
-                //       by them granting the POST_NOTIFICATION permission. This UI should provide the user
-                //       "OK" and "No thanks" buttons. If the user selects "OK," directly request the permission.
-                //       If the user selects "No thanks," allow the user to continue without notifications.
-            } else {
-                // Directly ask for the permission
-                requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                requestPermissionLauncher.launch(android.Manifest.permission.SCHEDULE_EXACT_ALARM)
-            }
+        if (ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) ==
+            PackageManager.PERMISSION_GRANTED
+            && ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.SCHEDULE_EXACT_ALARM
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            // FCM SDK (and your app) can post notifications.
+        } else if (shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS) && shouldShowRequestPermissionRationale(
+                android.Manifest.permission.SCHEDULE_EXACT_ALARM
+            )
+        ) {
+            // TODO: display an educational UI explaining to the user the features that will be enabled
+            //       by them granting the POST_NOTIFICATION permission. This UI should provide the user
+            //       "OK" and "No thanks" buttons. If the user selects "OK," directly request the permission.
+            //       If the user selects "No thanks," allow the user to continue without notifications.
+        } else {
+            // Directly ask for the permission
+            requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            requestPermissionLauncher.launch(android.Manifest.permission.SCHEDULE_EXACT_ALARM)
         }
     }
 }
